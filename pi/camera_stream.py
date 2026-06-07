@@ -25,7 +25,7 @@ class StreamHandler(BaseHTTPRequestHandler):
                 try:
                     frame = cam.capture_array()
                     from PIL import Image
-                    img = Image.fromarray(frame)
+                    img = Image.fromarray(frame[..., ::-1])
                     buf = io.BytesIO()
                     img.save(buf, format='JPEG')
                     jpg = buf.getvalue()
