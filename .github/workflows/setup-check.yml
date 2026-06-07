@@ -1,0 +1,26 @@
+name: Setup Consistency Check
+
+# Runs on every PR to main — blocks merge if setup files are out of sync
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pi/**'
+      - 'cloud/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'shared/**'
+
+jobs:
+  consistency-check:
+    name: Validate setup consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run setup consistency checker
+        run: python3 scripts/check_setup_consistency.py
