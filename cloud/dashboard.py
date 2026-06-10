@@ -52,6 +52,7 @@ def get_local_ip():
 
 async def handle_pi(ws):
     """Receive frames from Pi, compute metrics, relay to browsers."""
+    global browsers
     print("  ✓ Pi connected")
     try:
         async for message in ws:
@@ -86,6 +87,7 @@ async def handle_pi(ws):
 
 async def handle_browser(ws):
     """Hold browser connection open for frame relay."""
+    global browsers
     browsers.add(ws)
     print(f"  ✓ Browser connected ({len(browsers)} total)")
     try:
