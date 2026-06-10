@@ -134,6 +134,10 @@ async def handle_pi(ws):
 
     except websockets.ConnectionClosed:
         pass
+    except Exception as e:
+        import traceback
+        print(f"  ✗ Pi handler error: {e}")
+        traceback.print_exc()
     finally:
         print("  ✗ Pi disconnected")
 

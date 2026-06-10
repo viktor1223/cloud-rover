@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Cloud Rover — Signal Health Monitor</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background: #0a0a0a;
             color: #e0e0e0;
@@ -19,18 +25,23 @@
             background: #111;
             border-bottom: 1px solid #222;
         }
+
         header h1 {
             font-size: 14px;
             font-weight: 600;
             color: #00ffaa;
             letter-spacing: 1px;
         }
+
         .nav-link {
             color: #555;
             text-decoration: none;
             font-size: 12px;
         }
-        .nav-link:hover { color: #00ffaa; }
+
+        .nav-link:hover {
+            color: #00ffaa;
+        }
 
         .live-status {
             display: flex;
@@ -38,11 +49,14 @@
             gap: 8px;
             font-size: 12px;
         }
+
         .live-dot {
-            width: 8px; height: 8px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #444;
         }
+
         .live-dot.on {
             background: #00ff88;
             box-shadow: 0 0 6px #00ff88;
@@ -64,12 +78,19 @@
             transition: background 0.2s;
             position: relative;
         }
-        .signal-card:hover { background: #0f0f0f; }
+
+        .signal-card:hover {
+            background: #0f0f0f;
+        }
+
         .signal-card.disabled {
             cursor: default;
             opacity: 0.35;
         }
-        .signal-card.disabled:hover { background: #0a0a0a; }
+
+        .signal-card.disabled:hover {
+            background: #0a0a0a;
+        }
 
         .card-header {
             display: flex;
@@ -77,11 +98,13 @@
             align-items: center;
             margin-bottom: 16px;
         }
+
         .card-name {
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
+
         .card-status {
             display: flex;
             align-items: center;
@@ -90,33 +113,60 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
         .card-dot {
-            width: 8px; height: 8px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
         }
-        .card-dot.up   { background: #00ff88; box-shadow: 0 0 4px #00ff88; }
-        .card-dot.down { background: #ff4444; box-shadow: 0 0 4px #ff4444; }
-        .card-dot.none { background: #333; }
+
+        .card-dot.up {
+            background: #00ff88;
+            box-shadow: 0 0 4px #00ff88;
+        }
+
+        .card-dot.down {
+            background: #ff4444;
+            box-shadow: 0 0 4px #ff4444;
+        }
+
+        .card-dot.none {
+            background: #333;
+        }
 
         /* Uptime gauge */
         .card-gauge {
             text-align: center;
             margin: 8px 0 16px;
         }
+
         .gauge-value {
             font-size: 48px;
             font-weight: 700;
             line-height: 1;
         }
+
         .gauge-label {
             font-size: 10px;
             color: #555;
             margin-top: 2px;
         }
-        .g-good { color: #00ff88; }
-        .g-warn { color: #ffaa00; }
-        .g-bad  { color: #ff4444; }
-        .g-none { color: #333; }
+
+        .g-good {
+            color: #00ff88;
+        }
+
+        .g-warn {
+            color: #ffaa00;
+        }
+
+        .g-bad {
+            color: #ff4444;
+        }
+
+        .g-none {
+            color: #333;
+        }
 
         /* Mini KPIs */
         .card-kpis {
@@ -125,6 +175,7 @@
             gap: 8px;
             margin-bottom: 12px;
         }
+
         .mini-kpi {
             background: #111;
             border: 1px solid #1a1a1a;
@@ -132,11 +183,13 @@
             padding: 8px;
             text-align: center;
         }
+
         .mini-kpi-value {
             font-size: 18px;
             font-weight: 700;
             color: #00ffaa;
         }
+
         .mini-kpi-label {
             font-size: 9px;
             color: #555;
@@ -162,7 +215,10 @@
             text-decoration: none;
             letter-spacing: 0.5px;
         }
-        .signal-card:hover .card-link { color: #00ffaa; }
+
+        .signal-card:hover .card-link {
+            color: #00ffaa;
+        }
 
         /* Coming soon badge */
         .coming-soon {
@@ -189,13 +245,17 @@
             font-size: 11px;
             color: #444;
         }
-        .session-bar b { color: #888; }
+
+        .session-bar b {
+            color: #888;
+        }
 
         /* All events section */
         .events-section {
             background: #0a0a0a;
             padding: 16px;
         }
+
         .panel-title {
             font-size: 10px;
             color: #555;
@@ -203,10 +263,12 @@
             letter-spacing: 1.5px;
             margin-bottom: 12px;
         }
+
         .event-log {
             max-height: 300px;
             overflow-y: auto;
         }
+
         .evt {
             display: flex;
             align-items: center;
@@ -215,8 +277,18 @@
             border-bottom: 1px solid #111;
             font-size: 12px;
         }
-        .evt-time { color: #333; min-width: 80px; }
-        .evt-icon { font-size: 14px; min-width: 20px; text-align: center; }
+
+        .evt-time {
+            color: #333;
+            min-width: 80px;
+        }
+
+        .evt-icon {
+            font-size: 14px;
+            min-width: 20px;
+            text-align: center;
+        }
+
         .evt-badge {
             font-size: 9px;
             padding: 1px 5px;
@@ -226,15 +298,46 @@
             min-width: 50px;
             text-align: center;
         }
-        .evt-text { color: #888; }
-        .evt-connect    .evt-icon { color: #00ff88; }
-        .evt-disconnect .evt-icon { color: #ff4444; }
-        .evt-gap        .evt-icon { color: #ffaa00; }
-        .evt-spike      .evt-icon { color: #ff6600; }
-        .badge-camera  { background: #0a1a2a; color: #00aaff; }
-        .badge-motors  { background: #2a1a0a; color: #ff8844; }
-        .badge-imu     { background: #1a0a2a; color: #aa66ff; }
-        .badge-brain   { background: #0a2a1a; color: #44ff88; }
+
+        .evt-text {
+            color: #888;
+        }
+
+        .evt-connect .evt-icon {
+            color: #00ff88;
+        }
+
+        .evt-disconnect .evt-icon {
+            color: #ff4444;
+        }
+
+        .evt-gap .evt-icon {
+            color: #ffaa00;
+        }
+
+        .evt-spike .evt-icon {
+            color: #ff6600;
+        }
+
+        .badge-camera {
+            background: #0a1a2a;
+            color: #00aaff;
+        }
+
+        .badge-motors {
+            background: #2a1a0a;
+            color: #ff8844;
+        }
+
+        .badge-imu {
+            background: #1a0a2a;
+            color: #aa66ff;
+        }
+
+        .badge-brain {
+            background: #0a2a1a;
+            color: #44ff88;
+        }
 
         .no-data {
             text-align: center;
@@ -242,12 +345,14 @@
             color: #333;
             font-size: 12px;
         }
+
         .no-data-icon {
             font-size: 32px;
             margin-bottom: 8px;
         }
     </style>
 </head>
+
 <body>
     <header>
         <h1>SIGNAL HEALTH MONITOR</h1>
@@ -313,9 +418,18 @@
                 <div class="gauge-label">NO SIGNAL SOURCE</div>
             </div>
             <div class="card-kpis">
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Stalls</div></div>
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Cmd Lag</div></div>
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Hz</div></div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Stalls</div>
+                </div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Cmd Lag</div>
+                </div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Hz</div>
+                </div>
             </div>
         </div>
 
@@ -334,9 +448,18 @@
                 <div class="gauge-label">NO SIGNAL SOURCE</div>
             </div>
             <div class="card-kpis">
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Drift</div></div>
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Hz</div></div>
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Drops</div></div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Drift</div>
+                </div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Hz</div>
+                </div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Drops</div>
+                </div>
             </div>
         </div>
 
@@ -355,9 +478,18 @@
                 <div class="gauge-label">NO SIGNAL SOURCE</div>
             </div>
             <div class="card-kpis">
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Inf/s</div></div>
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">P95</div></div>
-                <div class="mini-kpi"><div class="mini-kpi-value">&mdash;</div><div class="mini-kpi-label">Errors</div></div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Inf/s</div>
+                </div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">P95</div>
+                </div>
+                <div class="mini-kpi">
+                    <div class="mini-kpi-value">&mdash;</div>
+                    <div class="mini-kpi-label">Errors</div>
+                </div>
             </div>
         </div>
     </div>
@@ -400,7 +532,7 @@
                 });
                 renderAll();
             })
-            .catch(() => {});
+            .catch(() => { });
 
         function connect() {
             const wsUrl = 'ws://' + location.hostname + ':9091';
@@ -590,4 +722,5 @@
         connect();
     </script>
 </body>
+
 </html>

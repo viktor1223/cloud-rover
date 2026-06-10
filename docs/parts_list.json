@@ -1,0 +1,180 @@
+{
+  "project": "Cloud Rover",
+  "parts": [
+    {
+      "category": "Chassis & Mechanical",
+      "items": [
+        {
+          "name": "2WD Smart Robot Car Chassis Kit",
+          "description": "Acrylic platform with 2× TT gearmotor mounts, caster wheel, mounting holes. Pre-drilled for common components.",
+          "quantity": 1,
+          "notes": "Get a kit that includes the motors and wheels. Search '2WD robot chassis kit Arduino' on Amazon. Most are compatible."
+        },
+        {
+          "name": "TT DC Gearmotor (6V, 200RPM)",
+          "description": "Yellow TT motor with gear reduction. 3-6V operating. Dual shaft preferred (one side for wheel, one for encoder disc).",
+          "quantity": 2,
+          "notes": "Usually included in chassis kit. If buying separate, get the dual-shaft version for encoder support."
+        },
+        {
+          "name": "Rubber Wheels (65mm)",
+          "description": "Press-fit wheels for TT motor D-shaft.",
+          "quantity": 2,
+          "notes": "Usually included in chassis kit."
+        },
+        {
+          "name": "Ball Caster Wheel",
+          "description": "Metal ball caster, rear support point. Creates 3-point contact.",
+          "quantity": 1,
+          "notes": "Usually included in chassis kit."
+        },
+        {
+          "name": "Standoffs, screws, nuts (M3)",
+          "description": "M3 nylon or brass standoffs for mounting Pi and sensor boards above chassis.",
+          "quantity": 1,
+          "notes": "Pack of assorted M3 standoffs. Need ~20mm height for Pi mount."
+        }
+      ]
+    },
+    {
+      "category": "Motor Control",
+      "items": [
+        {
+          "name": "L298N Dual H-Bridge Motor Driver",
+          "description": "Controls 2 DC motors independently. Direction + PWM speed. Built-in 5V regulator and flyback diodes.",
+          "quantity": 1,
+          "notes": "The red breakout board version. Has screw terminals for motors and power, header pins for logic."
+        },
+        {
+          "name": "Jumper Wires (Female-Female)",
+          "description": "For Pi GPIO header to L298N logic pins.",
+          "quantity": 10,
+          "notes": "Need 6 for motor control (ENA, IN1-4, ENB) + 2 for power/ground."
+        },
+        {
+          "name": "Jumper Wires (Male-Female)",
+          "description": "For sensor connections where one end needs breadboard or header.",
+          "quantity": 10,
+          "notes": "For HC-SR04, MPU-6050, LED connections."
+        }
+      ]
+    },
+    {
+      "category": "Power",
+      "items": [
+        {
+          "name": "4× AA Battery Holder with Switch",
+          "description": "Holds 4 AA batteries in series (6V). Switch for motor kill. Bare wire leads.",
+          "quantity": 1,
+          "notes": "Use NiMH rechargeable AA batteries (4 × 1.2V = 4.8V) or alkaline (4 × 1.5V = 6V). Either works with L298N."
+        },
+        {
+          "name": "AA NiMH Rechargeable Batteries (1.2V, 2000mAh)",
+          "description": "Rechargeable batteries for motor supply.",
+          "quantity": 4,
+          "notes": "Eneloop or Amazon Basics are reliable. Get a charger too if you don't have one."
+        },
+        {
+          "name": "5V USB Power Bank (5000mAh+)",
+          "description": "Powers the Raspberry Pi via micro-USB. Must supply 2.5A continuous.",
+          "quantity": 1,
+          "notes": "Small, lightweight power bank. Must NOT have auto-shutoff (some banks turn off when current draw is low). Anker or similar quality brand."
+        }
+      ]
+    },
+    {
+      "category": "Sensors",
+      "items": [
+        {
+          "name": "HC-SR04 Ultrasonic Distance Sensor",
+          "description": "Measures distance 2cm-400cm via ultrasonic ping. 5V logic.",
+          "quantity": 1,
+          "notes": "REQUIRES voltage divider on ECHO pin (5V→3.3V). See wiring diagram."
+        },
+        {
+          "name": "MPU-6050 IMU Module (GY-521)",
+          "description": "3-axis accelerometer + 3-axis gyroscope. I2C interface. 3.3V/5V compatible.",
+          "quantity": 1,
+          "notes": "The blue GY-521 breakout board. Provides orientation data for dead reckoning and tilt detection."
+        },
+        {
+          "name": "ArduCam IMX708 Camera Module",
+          "description": "12MP camera with autofocus. CSI interface.",
+          "quantity": 1,
+          "notes": "ALREADY HAVE THIS. Connected via CSI ribbon cable."
+        }
+      ]
+    },
+    {
+      "category": "Electronics (Small Components)",
+      "items": [
+        {
+          "name": "1kΩ Resistor",
+          "description": "HC-SR04 ECHO voltage divider (upper resistor).",
+          "quantity": 2,
+          "notes": "1/4W through-hole. Part of voltage divider: 5V × 2k/(1k+2k) = 3.33V."
+        },
+        {
+          "name": "2kΩ Resistor",
+          "description": "HC-SR04 ECHO voltage divider (lower resistor, to GND).",
+          "quantity": 2,
+          "notes": "1/4W through-hole. If you can't find 2kΩ, use 2× 1kΩ in series."
+        },
+        {
+          "name": "220Ω Resistor",
+          "description": "Current-limiting resistor for status LED.",
+          "quantity": 2,
+          "notes": "1/4W through-hole."
+        },
+        {
+          "name": "Green LED (5mm)",
+          "description": "Status indicator. Visible from outside chassis.",
+          "quantity": 2,
+          "notes": "One for status, one spare."
+        },
+        {
+          "name": "100nF Ceramic Capacitor",
+          "description": "EMI suppression across motor terminals.",
+          "quantity": 4,
+          "notes": "Solder one directly across each motor's terminals to suppress electrical noise from brushes. 2 per motor (one across terminals, one from each terminal to motor case)."
+        },
+        {
+          "name": "Mini Breadboard (170-point)",
+          "description": "For voltage divider and sensor connections. Mounts on chassis.",
+          "quantity": 1,
+          "notes": "Self-adhesive back sticks to chassis. Routes sensor wiring neatly."
+        }
+      ]
+    },
+    {
+      "category": "Already Have",
+      "items": [
+        {
+          "name": "Raspberry Pi 3 Model B",
+          "quantity": 1,
+          "notes": "Already set up with OS, camera, WiFi, SSH."
+        },
+        {
+          "name": "ArduCam IMX708 Camera",
+          "quantity": 1,
+          "notes": "Already connected and tested."
+        },
+        {
+          "name": "MicroSD Card (16GB+)",
+          "quantity": 1,
+          "notes": "Already flashed with Pi OS."
+        }
+      ]
+    }
+  ],
+  "estimated_cost": {
+    "chassis_kit_with_motors": "$15-25",
+    "l298n": "$5-8",
+    "battery_holder_and_batteries": "$15-20",
+    "usb_power_bank": "$10-15 (or use one you already have)",
+    "hc_sr04": "$3-5",
+    "mpu_6050": "$3-5",
+    "resistors_leds_caps_breadboard_jumpers": "$10-15",
+    "total_estimate": "$60-90 (excluding items you already have)"
+  }
+}

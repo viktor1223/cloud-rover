@@ -1,9 +1,15 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Cloud Rover — Dev HUD</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background: #0a0a0a;
             color: #e0e0e0;
@@ -21,17 +27,20 @@
             background: #111;
             border-bottom: 1px solid #222;
         }
+
         header h1 {
             font-size: 14px;
             font-weight: 600;
             color: #00ffaa;
             letter-spacing: 1px;
         }
+
         .header-right {
             display: flex;
             align-items: center;
             gap: 12px;
         }
+
         .brain-tag {
             font-size: 11px;
             color: #aa55ff;
@@ -40,18 +49,22 @@
             border-radius: 3px;
             border: 1px solid #aa55ff33;
         }
+
         .status {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 12px;
         }
+
         .status-dot {
-            width: 8px; height: 8px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #444;
             transition: all 0.3s;
         }
+
         .status-dot.live {
             background: #00ff88;
             box-shadow: 0 0 6px #00ff88;
@@ -71,6 +84,7 @@
             padding: 12px;
             overflow: hidden;
         }
+
         .panel-title {
             font-size: 10px;
             color: #555;
@@ -86,10 +100,12 @@
             align-items: center;
             justify-content: center;
         }
+
         .feed canvas {
             max-width: 100%;
             max-height: 100%;
         }
+
         .no-signal {
             position: absolute;
             color: #333;
@@ -108,6 +124,7 @@
             align-items: flex-end;
             pointer-events: none;
         }
+
         .action-badge {
             font-size: 24px;
             font-weight: 800;
@@ -115,10 +132,31 @@
             border-radius: 6px;
             letter-spacing: 2px;
         }
-        .action-FORWARD { background: #00aa5580; color: #00ffaa; border: 2px solid #00ffaa; }
-        .action-LEFT    { background: #00aaff80; color: #55ccff; border: 2px solid #55ccff; }
-        .action-RIGHT   { background: #ffaa0080; color: #ffcc55; border: 2px solid #ffcc55; }
-        .action-STOP    { background: #ff444480; color: #ff6666; border: 2px solid #ff6666; }
+
+        .action-FORWARD {
+            background: #00aa5580;
+            color: #00ffaa;
+            border: 2px solid #00ffaa;
+        }
+
+        .action-LEFT {
+            background: #00aaff80;
+            color: #55ccff;
+            border: 2px solid #55ccff;
+        }
+
+        .action-RIGHT {
+            background: #ffaa0080;
+            color: #ffcc55;
+            border: 2px solid #ffcc55;
+        }
+
+        .action-STOP {
+            background: #ff444480;
+            color: #ff6666;
+            border: 2px solid #ff6666;
+        }
+
         .reasoning-box {
             max-width: 50%;
             font-size: 11px;
@@ -130,17 +168,33 @@
         }
 
         /* Metrics panel */
-        .metrics { overflow-y: auto; }
+        .metrics {
+            overflow-y: auto;
+        }
+
         .metric-row {
             display: flex;
             justify-content: space-between;
             padding: 5px 0;
             border-bottom: 1px solid #151515;
         }
-        .metric-label { color: #666; }
-        .metric-value { color: #00ffaa; font-weight: 600; }
-        .metric-value.warn { color: #ffaa00; }
-        .metric-value.bad { color: #ff4444; }
+
+        .metric-label {
+            color: #666;
+        }
+
+        .metric-value {
+            color: #00ffaa;
+            font-weight: 600;
+        }
+
+        .metric-value.warn {
+            color: #ffaa00;
+        }
+
+        .metric-value.bad {
+            color: #ff4444;
+        }
 
         /* Latency bar */
         .latency-bar {
@@ -151,6 +205,7 @@
             overflow: hidden;
             background: #151515;
         }
+
         .latency-bar div {
             display: flex;
             align-items: center;
@@ -161,10 +216,22 @@
             min-width: 20px;
             transition: width 0.2s ease;
         }
-        .bar-capture { background: #00aaff; }
-        .bar-encode  { background: #ffaa00; }
-        .bar-network { background: #ff5555; }
-        .bar-brain   { background: #aa55ff; }
+
+        .bar-capture {
+            background: #00aaff;
+        }
+
+        .bar-encode {
+            background: #ffaa00;
+        }
+
+        .bar-network {
+            background: #ff5555;
+        }
+
+        .bar-brain {
+            background: #aa55ff;
+        }
 
         .legend {
             display: flex;
@@ -173,13 +240,26 @@
             color: #444;
             margin-bottom: 16px;
         }
+
         .legend span::before {
             content: '\u25A0 ';
         }
-        .legend .l-capture { color: #00aaff; }
-        .legend .l-encode  { color: #ffaa00; }
-        .legend .l-network { color: #ff5555; }
-        .legend .l-brain   { color: #aa55ff; }
+
+        .legend .l-capture {
+            color: #00aaff;
+        }
+
+        .legend .l-encode {
+            color: #ffaa00;
+        }
+
+        .legend .l-network {
+            color: #ff5555;
+        }
+
+        .legend .l-brain {
+            color: #aa55ff;
+        }
 
         /* Command input */
         .command-bar {
@@ -191,6 +271,7 @@
             align-items: center;
             border-top: 1px solid #222;
         }
+
         .command-bar label {
             font-size: 10px;
             color: #555;
@@ -198,6 +279,7 @@
             letter-spacing: 1.5px;
             white-space: nowrap;
         }
+
         .command-bar input {
             flex: 1;
             background: #151515;
@@ -209,12 +291,15 @@
             border-radius: 4px;
             outline: none;
         }
+
         .command-bar input:focus {
             border-color: #00ffaa;
         }
+
         .command-bar input::placeholder {
             color: #333;
         }
+
         .command-bar button {
             background: #00ffaa;
             color: #000;
@@ -227,7 +312,11 @@
             cursor: pointer;
             letter-spacing: 1px;
         }
-        .command-bar button:hover { background: #00cc88; }
+
+        .command-bar button:hover {
+            background: #00cc88;
+        }
+
         .command-active {
             font-size: 11px;
             color: #00ffaa;
@@ -240,21 +329,36 @@
             overflow-y: auto;
             font-size: 11px;
         }
+
         .log-entry {
             padding: 2px 0;
             border-bottom: 1px solid #0f0f0f;
         }
-        .log-time { color: #333; }
-        .log-data { color: #666; }
-        .log-action { color: #00ffaa; }
-        .log-highlight { color: #ffaa00; }
+
+        .log-time {
+            color: #333;
+        }
+
+        .log-data {
+            color: #666;
+        }
+
+        .log-action {
+            color: #00ffaa;
+        }
+
+        .log-highlight {
+            color: #ffaa00;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <h1>CLOUD ROVER &mdash; DEV HUD</h1>
         <div class="header-right">
-            <a href="/signal-health.html" style="color:#555;text-decoration:none;font-size:11px;margin-right:8px;" onmouseover="this.style.color='#00ffaa'" onmouseout="this.style.color='#555'">SIGNAL HEALTH &rarr;</a>
+            <a href="/signal-health.html" style="color:#555;text-decoration:none;font-size:11px;margin-right:8px;"
+                onmouseover="this.style.color='#00ffaa'" onmouseout="this.style.color='#555'">SIGNAL HEALTH &rarr;</a>
             <span class="brain-tag" id="brainTag">NO BRAIN</span>
             <div class="status">
                 <span id="statusText">DISCONNECTED</span>
@@ -381,7 +485,7 @@
         }
 
         // No-signal timeout
-        setInterval(function() {
+        setInterval(function () {
             if (Date.now() - lastFrameTime > 3000 && lastFrameTime > 0) {
                 noSignal.textContent = 'SIGNAL LOST';
                 noSignal.style.display = 'block';
@@ -398,7 +502,7 @@
             }
         }
         commandSend.addEventListener('click', sendCommand);
-        commandInput.addEventListener('keydown', function(e) {
+        commandInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') sendCommand();
         });
 
@@ -406,14 +510,14 @@
             var wsUrl = 'ws://' + location.hostname + ':9091';
             ws = new WebSocket(wsUrl);
 
-            ws.onopen = function() {
+            ws.onopen = function () {
                 ws.send(JSON.stringify({ role: 'browser' }));
                 statusDot.classList.add('live');
                 statusText.textContent = 'CONNECTED';
                 addLog('Connected to brain server');
             };
 
-            ws.onmessage = function(event) {
+            ws.onmessage = function (event) {
                 var data = JSON.parse(event.data);
                 if (data.type === 'frame') {
                     pendingFrame = data;
@@ -423,19 +527,19 @@
                 }
             };
 
-            ws.onclose = function() {
+            ws.onclose = function () {
                 statusDot.classList.remove('live');
                 statusText.textContent = 'DISCONNECTED';
                 addLog('Disconnected, reconnecting...');
                 setTimeout(connect, 2000);
             };
 
-            ws.onerror = function() { ws.close(); };
+            ws.onerror = function () { ws.close(); };
         }
 
         function renderFrame(data) {
             var img = new Image();
-            img.onload = function() {
+            img.onload = function () {
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
@@ -522,7 +626,7 @@
             frameCount++;
             var now = performance.now();
             fpsTimestamps.push(now);
-            fpsTimestamps = fpsTimestamps.filter(function(t) { return now - t < 2000; });
+            fpsTimestamps = fpsTimestamps.filter(function (t) { return now - t < 2000; });
             var fps = fpsTimestamps.length / 2;
 
             var brainMs = data.brain ? data.brain.inference_ms : 0;
@@ -575,4 +679,5 @@
         connect();
     </script>
 </body>
+
 </html>

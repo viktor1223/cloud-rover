@@ -1,0 +1,183 @@
+{
+  "version": 1,
+  "author": "Viktor Ciroski",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-arduino-uno",
+      "id": "pi",
+      "left": 200,
+      "top": 120,
+      "attrs": {},
+      "_note": "Represents Raspberry Pi 3B GPIO. Pin mapping: 0=GPIO17, 1=GPIO27, 2=GPIO22, 3=GPIO23, 5=GPIO12(PWM0), 6=GPIO13(PWM1)"
+    },
+    {
+      "type": "chip-l298n",
+      "id": "bridge",
+      "left": 500,
+      "top": 80,
+      "attrs": { "Vs": "6" },
+      "_note": "L298N dual H-bridge motor driver. 6V motor supply from 4xAA battery pack. Drives both DC motors."
+    },
+    {
+      "type": "chip-dc-motor",
+      "id": "motor_left",
+      "left": 700,
+      "top": 60,
+      "attrs": { "ratedV": "6" },
+      "_note": "Left drive motor. 6V brushed DC with encoder. TT gearmotor."
+    },
+    {
+      "type": "chip-dc-motor",
+      "id": "motor_right",
+      "left": 700,
+      "top": 180,
+      "attrs": { "ratedV": "6" },
+      "_note": "Right drive motor. 6V brushed DC with encoder. TT gearmotor."
+    },
+    {
+      "type": "chip-battery",
+      "id": "motor_battery",
+      "left": 400,
+      "top": 320,
+      "attrs": { "voltage": "6" },
+      "_note": "Motor power supply: 4xAA NiMH rechargeable (4 x 1.2V = 4.8V, or 4x alkaline = 6V). Separate from Pi power to avoid motor noise on logic rail."
+    },
+    {
+      "type": "chip-battery",
+      "id": "pi_battery",
+      "left": 40,
+      "top": 320,
+      "attrs": { "voltage": "5" },
+      "_note": "Pi power supply: 5V 2.5A USB power bank. Must supply at least 2A for stable Pi 3B + camera operation. Connected via micro-USB, NOT through GPIO 5V pin in production."
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_status",
+      "left": 140,
+      "top": 20,
+      "attrs": { "color": "green" },
+      "_note": "Status LED: solid = ready, blinking = streaming, off = error. Connected to GPIO 18 (Pi pin 7)."
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_led",
+      "left": 60,
+      "top": 20,
+      "attrs": { "resistance": "220" },
+      "_note": "Current limiting resistor for status LED. 220 ohm. (3.3V - 2V) / 220 = 5.9mA, safe for GPIO."
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_echo1",
+      "left": 60,
+      "top": 60,
+      "attrs": { "resistance": "1000" },
+      "_note": "HC-SR04 ECHO voltage divider (upper). 1kΩ. Divides 5V ECHO signal down to 3.3V safe for Pi GPIO 25. Part of 1k/2k divider: 5V × 2k/(1k+2k) = 3.33V."
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_echo2",
+      "left": 60,
+      "top": 90,
+      "attrs": { "resistance": "2000" },
+      "_note": "HC-SR04 ECHO voltage divider (lower). 2kΩ. Goes to GND. Combined with R1=1k gives 3.33V output from 5V ECHO, safe for Pi 3.3V GPIO."
+    }
+  ],
+  "connections": [
+    ["pi:0", "bridge:IN1", "orange", []],
+    ["pi:1", "bridge:IN2", "orange", []],
+    ["pi:2", "bridge:IN3", "yellow", []],
+    ["pi:3", "bridge:IN4", "yellow", []],
+    ["pi:5", "bridge:ENA", "purple", []],
+    ["pi:6", "bridge:ENB", "purple", []],
+
+    ["bridge:OUT1", "motor_left:TERM1", "red", []],
+    ["bridge:OUT2", "motor_left:TERM2", "brown", []],
+    ["bridge:OUT3", "motor_right:TERM1", "red", []],
+    ["bridge:OUT4", "motor_right:TERM2", "brown", []],
+
+    ["motor_battery:+", "bridge:12V", "red", []],
+    ["motor_battery:-", "bridge:GND", "black", []],
+
+    ["pi_battery:+", "pi:5V", "red", []],
+    ["pi_battery:-", "pi:GND.1", "black", []],
+
+    ["bridge:GND2", "pi:GND.2", "black", []],
+
+    ["pi:8", "r_led:1", "green", []],
+    ["r_led:2", "led_status:A", "green", []],
+    ["led_status:C", "pi:GND.3", "black", []]
+  ],
+  "serialMonitor": { "display": "auto" },
+
+  "_wiring_notes": {
+    "description": "Cloud Rover — Complete Wiring Diagram",
+    "board": "Raspberry Pi 3 Model B (represented as Arduino Uno in diagram tool)",
+    "gpio_pin_mapping": {
+      "Diagram Pin 0": "Pi GPIO 17 → L298N IN1 (Left Motor Direction A)",
+      "Diagram Pin 1": "Pi GPIO 27 → L298N IN2 (Left Motor Direction B)",
+      "Diagram Pin 2": "Pi GPIO 22 → L298N IN3 (Right Motor Direction A)",
+      "Diagram Pin 3": "Pi GPIO 23 → L298N IN4 (Right Motor Direction B)",
+      "Diagram Pin 5": "Pi GPIO 12 → L298N ENA (Left Motor PWM Speed)",
+      "Diagram Pin 6": "Pi GPIO 13 → L298N ENB (Right Motor PWM Speed)",
+      "Diagram Pin 8": "Pi GPIO 18 → Status LED (via 220Ω resistor)"
+    },
+    "sensors_not_in_diagram": {
+      "HC-SR04 Ultrasonic": {
+        "VCC": "Pi 5V rail",
+        "GND": "Pi GND",
+        "TRIG": "Pi GPIO 24 (output, 3.3V is enough to trigger)",
+        "ECHO": "Pi GPIO 25 via voltage divider (1kΩ + 2kΩ to GND). ECHO outputs 5V, Pi GPIO max is 3.3V. Divider: 5V × 2k/(1k+2k) = 3.33V.",
+        "mounting": "Front-facing, centered on chassis"
+      },
+      "MPU-6050 IMU": {
+        "VCC": "Pi 3.3V (MPU-6050 has onboard regulator, but 3.3V is cleaner)",
+        "GND": "Pi GND",
+        "SDA": "Pi GPIO 2 (I2C SDA, pin 3 on header)",
+        "SCL": "Pi GPIO 3 (I2C SCL, pin 5 on header)",
+        "INT": "Pi GPIO 4 (optional interrupt, not required initially)",
+        "I2C_address": "0x68 (default, AD0 low)",
+        "mounting": "Center of chassis, flat, aligned with direction of travel"
+      },
+      "ArduCam IMX708 Camera": {
+        "connection": "CSI ribbon cable to Pi camera port",
+        "power": "Powered by Pi via CSI connector",
+        "mounting": "Front-facing, slightly elevated, 15-20° downward tilt"
+      }
+    },
+    "power_design": {
+      "motor_supply": {
+        "source": "4× AA NiMH rechargeable batteries in series holder",
+        "voltage": "4.8V (NiMH) to 6V (alkaline)",
+        "capacity": "~2000mAh (NiMH)",
+        "connects_to": "L298N 12V input terminal",
+        "notes": "L298N drops ~2V, so motors see ~2.8-4V. Adequate for TT gearmotors. If more power needed, upgrade to 2S LiPo (7.4V)."
+      },
+      "logic_supply": {
+        "source": "5V USB power bank (phone charger battery)",
+        "voltage": "5V regulated",
+        "capacity": "5000-10000mAh recommended",
+        "connects_to": "Pi micro-USB port",
+        "notes": "MUST be separate from motor power. Motor noise will crash the Pi if shared. Power bank must supply 2.5A continuous."
+      },
+      "common_ground": {
+        "critical": "L298N GND and Pi GND MUST be connected together. Without common ground, logic signals cannot reference the same voltage level and motors will not respond to commands."
+      }
+    },
+    "motor_control_logic": {
+      "FORWARD":  {"IN1": "HIGH", "IN2": "LOW", "IN3": "HIGH", "IN4": "LOW"},
+      "BACKWARD": {"IN1": "LOW", "IN2": "HIGH", "IN3": "LOW", "IN4": "HIGH"},
+      "LEFT":     {"IN1": "LOW", "IN2": "HIGH", "IN3": "HIGH", "IN4": "LOW"},
+      "RIGHT":    {"IN1": "HIGH", "IN2": "LOW", "IN3": "LOW", "IN4": "HIGH"},
+      "STOP":     {"IN1": "LOW", "IN2": "LOW", "IN3": "LOW", "IN4": "LOW"},
+      "speed": "ENA and ENB control speed via PWM (0-100% duty cycle). Start at 50% and tune."
+    },
+    "safety": {
+      "voltage_divider": "REQUIRED on HC-SR04 ECHO pin. 5V into Pi GPIO will permanently damage the pin.",
+      "flyback_diodes": "L298N has built-in flyback diodes. No external diodes needed.",
+      "decoupling_caps": "Add 100nF ceramic capacitor across each motor terminal to suppress EMI noise. Solder directly to motor.",
+      "fuse": "Optional: 3A blade fuse on motor battery positive lead."
+    }
+  }
+}
