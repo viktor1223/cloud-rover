@@ -3,3 +3,4 @@ gpiozero
 pigpio
 requests
 websockets
+Pillow

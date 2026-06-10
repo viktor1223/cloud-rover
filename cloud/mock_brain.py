@@ -37,7 +37,7 @@ class BrainHandler(BaseHTTPRequestHandler):
             fps = frame_count / elapsed if elapsed > 0 else 0
             
             # Simulate AI inference (mock action)
-            actions = ["forward", "forward", "forward", "turn_left", "turn_right", "stop"]
+            actions = ["SIMULATED ACTION: MOVE_FORWARD", "SIMULATED ACTION: TURN_LEFT", "SIMULATED ACTION: TURN_RIGHT"]
             action = actions[frame_count % len(actions)]
             
             # Save latest frame for viewing
@@ -56,7 +56,7 @@ class BrainHandler(BaseHTTPRequestHandler):
             self.end_headers()
             response = {
                 "action": action,
-                "confidence": 0.87,
+                "confidence": -1,  # simulated
                 "frame_num": frame_count,
                 "inference_ms": 45  # simulated
             }

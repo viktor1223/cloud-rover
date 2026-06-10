@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cloud Rover — Dev HUD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: #111;
+            border-bottom: 1px solid #222;
+        }
+        header h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00ffaa;
+            letter-spacing: 1px;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #444;
+            transition: all 0.3s;
+        }
+        .status-dot.live {
+            background: #00ff88;
+            box-shadow: 0 0 6px #00ff88;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            grid-template-rows: 1fr 150px;
+            height: calc(100vh - 37px);
+            gap: 1px;
+            background: #222;
+        }
+
+        .panel {
+            background: #0a0a0a;
+            padding: 12px;
+            overflow: hidden;
+        }
+        .panel-title {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        /* Camera feed */
+        .feed {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .feed canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .no-signal {
+            position: absolute;
+            color: #333;
+            font-size: 24px;
+            letter-spacing: 4px;
+        }
+
+        /* Metrics panel */
+        .metrics { overflow-y: auto; }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #151515;
+        }
+        .metric-label { color: #666; }
+        .metric-value { color: #00ffaa; font-weight: 600; }
+        .metric-value.warn { color: #ffaa00; }
+        .metric-value.bad { color: #ff4444; }
+
+        /* Latency bar */
+        .latency-bar {
+            display: flex;
+            height: 24px;
+            margin: 6px 0;
+            border-radius: 3px;
+            overflow: hidden;
+            background: #151515;
+        }
+        .latency-bar div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #000;
+            font-weight: 700;
+            min-width: 24px;
+            transition: width 0.2s ease;
+        }
+        .bar-capture { background: #00aaff; }
+        .bar-encode  { background: #ffaa00; }
+        .bar-network { background: #ff5555; }
+        .bar-brain   { background: #aa55ff; }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            font-size: 10px;
+            color: #444;
+            margin-bottom: 16px;
+        }
+        .legend span::before {
+            content: '■ ';
+        }
+        .legend .l-capture { color: #00aaff; }
+        .legend .l-encode  { color: #ffaa00; }
+        .legend .l-network { color: #ff5555; }
+        .legend .l-brain   { color: #aa55ff; }
+
+        /* Event log */
+        .log {
+            grid-column: 1 / -1;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #0f0f0f;
+        }
+        .log-time { color: #333; }
+        .log-data { color: #666; }
+        .log-highlight { color: #ffaa00; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CLOUD ROVER &mdash; DEV HUD</h1>
+        <div class="status">
+            <span id="statusText">DISCONNECTED</span>
+            <div class="status-dot" id="statusDot"></div>
+        </div>
+    </header>
+
+    <div class="main">
+        <!-- Live feed -->
+        <div class="panel feed">
+            <canvas id="feedCanvas" width="640" height="480"></canvas>
+            <div class="no-signal" id="noSignal">NO SIGNAL</div>
+        </div>
+
+        <!-- Metrics sidebar -->
+        <div class="panel metrics">
+            <div class="panel-title">Pipeline Latency</div>
+            <div class="latency-bar" id="latencyBar">
+                <div class="bar-capture" id="barCapture">--</div>
+                <div class="bar-encode" id="barEncode">--</div>
+                <div class="bar-network" id="barNetwork">--</div>
+            </div>
+            <div class="legend">
+                <span class="l-capture">capture</span>
+                <span class="l-encode">encode</span>
+                <span class="l-network">network</span>
+                <span class="l-brain">brain</span>
+            </div>
+
+            <div class="panel-title">Metrics</div>
+            <div class="metric-row">
+                <span class="metric-label">FPS</span>
+                <span class="metric-value" id="mFps">--</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Frame</span>
+                <span class="metric-value" id="mFrame">#--</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total latency</span>
+                <span class="metric-value" id="mTotal">-- ms</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Capture</span>
+                <span class="metric-value" id="mCapture">-- ms</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Encode</span>
+                <span class="metric-value" id="mEncode">-- ms</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Network</span>
+                <span class="metric-value" id="mNetwork">-- ms</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Brain</span>
+                <span class="metric-value" id="mBrain">-- ms</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">JPEG size</span>
+                <span class="metric-value" id="mSize">-- KB</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Frames received</span>
+                <span class="metric-value" id="mCount">0</span>
+            </div>
+        </div>
+
+        <!-- Event log -->
+        <div class="panel log">
+            <div class="panel-title">Event Log</div>
+            <div id="logEntries"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('feedCanvas');
+        const ctx = canvas.getContext('2d');
+        const noSignal = document.getElementById('noSignal');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const logEl = document.getElementById('logEntries');
+
+        let frameCount = 0;
+        let fpsTimestamps = [];
+        let lastFrameTime = 0;
+        let ws;
+
+        // No-signal timeout
+        setInterval(() => {
+            if (Date.now() - lastFrameTime > 3000 && lastFrameTime > 0) {
+                noSignal.textContent = 'SIGNAL LOST';
+                noSignal.style.display = 'block';
+            }
+        }, 1000);
+
+        function connect() {
+            const wsUrl = 'ws://' + location.hostname + ':9091';
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ role: 'browser' }));
+                statusDot.classList.add('live');
+                statusText.textContent = 'CONNECTED';
+                addLog('Connected to dashboard server');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'frame') {
+                    renderFrame(data);
+                    updateMetrics(data);
+                    // Log periodically or on latency spikes
+                    if (data.seq % 50 === 0 || data.total_ms > 200) {
+                        addLog(
+                            'Frame #' + data.seq +
+                            ' \u2014 ' + data.total_ms + 'ms' +
+                            ' (cap:' + data.capture_ms +
+                            ' enc:' + data.encode_ms +
+                            ' net:' + data.network_ms + ')',
+                            data.total_ms > 200
+                        );
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                statusDot.classList.remove('live');
+                statusText.textContent = 'DISCONNECTED';
+                addLog('Disconnected \u2014 reconnecting...');
+                setTimeout(connect, 2000);
+            };
+
+            ws.onerror = () => ws.close();
+        }
+
+        function renderFrame(data) {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                noSignal.style.display = 'none';
+                lastFrameTime = Date.now();
+            };
+            img.src = 'data:image/jpeg;base64,' + data.frame;
+        }
+
+        function updateMetrics(data) {
+            frameCount++;
+
+            // Rolling FPS (2-second window)
+            const now = performance.now();
+            fpsTimestamps.push(now);
+            fpsTimestamps = fpsTimestamps.filter(t => now - t < 2000);
+            const fps = fpsTimestamps.length / 2;
+
+            setText('mFps', fps.toFixed(1), fps < 5 ? 'warn' : '');
+            setText('mFrame', '#' + data.seq);
+            setText('mTotal', data.total_ms + ' ms', data.total_ms > 200 ? 'bad' : data.total_ms > 150 ? 'warn' : '');
+            setText('mCapture', data.capture_ms + ' ms');
+            setText('mEncode', data.encode_ms + ' ms');
+            setText('mNetwork', data.network_ms + ' ms', data.network_ms > 50 ? 'warn' : '');
+            setText('mBrain', '-- ms');
+            setText('mSize', data.jpeg_kb + ' KB');
+            setText('mCount', frameCount);
+
+            // Latency bar widths
+            const total = data.capture_ms + data.encode_ms + data.network_ms;
+            if (total > 0) {
+                setBar('barCapture', data.capture_ms, total);
+                setBar('barEncode', data.encode_ms, total);
+                setBar('barNetwork', data.network_ms, total);
+            }
+        }
+
+        function setText(id, value, cls) {
+            const el = document.getElementById(id);
+            el.textContent = value;
+            el.className = 'metric-value' + (cls ? ' ' + cls : '');
+        }
+
+        function setBar(id, ms, total) {
+            const el = document.getElementById(id);
+            el.style.width = Math.max(15, ms / total * 100) + '%';
+            el.textContent = Math.round(ms);
+        }
+
+        function addLog(text, highlight) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const t = new Date().toLocaleTimeString();
+            const cls = highlight ? 'log-highlight' : 'log-data';
+            entry.innerHTML = '<span class="log-time">[' + t + ']</span> <span class="' + cls + '">' + text + '</span>';
+            logEl.prepend(entry);
+
+            // Cap at 200 entries
+            while (logEl.children.length > 200) {
+                logEl.removeChild(logEl.lastChild);
+            }
+        }
+
+        connect();
+    </script>
+</body>
+</html>
