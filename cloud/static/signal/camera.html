@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cloud Rover — Camera Signal Health</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: #111;
+            border-bottom: 1px solid #222;
+        }
+        header h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00ffaa;
+            letter-spacing: 1px;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .nav-link {
+            color: #555;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .nav-link:hover { color: #00ffaa; }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #444;
+        }
+        .live-dot.on {
+            background: #00ff88;
+            box-shadow: 0 0 6px #00ff88;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: #222;
+            padding: 1px;
+        }
+        .grid-full { grid-column: 1 / -1; }
+
+        .panel {
+            background: #0a0a0a;
+            padding: 16px;
+        }
+        .panel-title {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        /* Health score gauge */
+        .health-gauge {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .health-score {
+            font-size: 64px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .health-label {
+            font-size: 11px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .health-good { color: #00ff88; }
+        .health-warn { color: #ffaa00; }
+        .health-bad  { color: #ff4444; }
+        .health-none { color: #333; }
+
+        /* KPI cards */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .kpi {
+            background: #111;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 12px;
+            text-align: center;
+        }
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00ffaa;
+        }
+        .kpi-label {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        .kpi-sub {
+            font-size: 10px;
+            color: #333;
+            margin-top: 2px;
+        }
+
+        /* Signal timeline */
+        .timeline-canvas {
+            width: 100%;
+            height: 60px;
+            background: #111;
+            border-radius: 4px;
+        }
+
+        /* Latency chart */
+        .chart-canvas {
+            width: 100%;
+            height: 180px;
+            background: #111;
+            border-radius: 4px;
+        }
+
+        /* Event log */
+        .event-log {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        .evt {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #111;
+            font-size: 12px;
+        }
+        .evt-time { color: #333; min-width: 80px; }
+        .evt-icon { font-size: 14px; min-width: 20px; text-align: center; }
+        .evt-text { color: #888; }
+        .evt-connect    .evt-icon { color: #00ff88; }
+        .evt-disconnect .evt-icon { color: #ff4444; }
+        .evt-gap        .evt-icon { color: #ffaa00; }
+        .evt-spike      .evt-icon { color: #ff6600; }
+
+        /* Latency distribution */
+        .dist-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 11px;
+        }
+        .dist-label {
+            min-width: 80px;
+            color: #555;
+            text-align: right;
+        }
+        .dist-bar-bg {
+            flex: 1;
+            height: 16px;
+            background: #111;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .dist-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+        .dist-count {
+            min-width: 40px;
+            color: #444;
+            font-size: 10px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #333;
+            font-size: 12px;
+        }
+        .no-data-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CAMERA STREAM &mdash; SIGNAL HEALTH</h1>
+        <div class="nav-links">
+            <div class="live-status">
+                <span id="liveText">DISCONNECTED</span>
+                <div class="live-dot" id="liveDot"></div>
+            </div>
+            <a href="/signal-health.html" class="nav-link">&larr; All Signals</a>
+            <a href="/dashboard.html" class="nav-link">Dev HUD</a>
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- Health score -->
+        <div class="panel">
+            <div class="panel-title">Session Health</div>
+            <div class="health-gauge">
+                <div class="health-score health-none" id="healthScore">&mdash;</div>
+                <div class="health-label" id="healthLabel">WAITING FOR DATA</div>
+            </div>
+            <div class="kpi-row">
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiDrops">0</div>
+                    <div class="kpi-label">Drops</div>
+                    <div class="kpi-sub">total disconnects</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiMTBF">&mdash;</div>
+                    <div class="kpi-label">MTBF</div>
+                    <div class="kpi-sub">mean time between failures</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiMTTR">&mdash;</div>
+                    <div class="kpi-label">MTTR</div>
+                    <div class="kpi-sub">mean time to recovery</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiGaps">0</div>
+                    <div class="kpi-label">Seq Gaps</div>
+                    <div class="kpi-sub">dropped frame bursts</div>
+                </div>
+            </div>
+            <div class="kpi-row">
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiFrames">0</div>
+                    <div class="kpi-label">Frames</div>
+                    <div class="kpi-sub">received this session</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiDropped">0</div>
+                    <div class="kpi-label">Dropped</div>
+                    <div class="kpi-sub">frames lost to gaps</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiSpikes">0</div>
+                    <div class="kpi-label">Spikes</div>
+                    <div class="kpi-sub">latency &gt; 300ms</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value" id="kpiSession">&mdash;</div>
+                    <div class="kpi-label">Session</div>
+                    <div class="kpi-sub">elapsed time</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Latency distribution -->
+        <div class="panel">
+            <div class="panel-title">Latency Distribution</div>
+            <div id="distChart">
+                <div class="no-data"><div class="no-data-icon">&loz;</div>No frames received yet</div>
+            </div>
+            <div style="margin-top: 20px;">
+                <div class="panel-title">Production Signals</div>
+                <div style="font-size: 11px; color: #555; line-height: 1.7;">
+                    <div><span style="color:#00ff88">&bull;</span> <b style="color:#888">Uptime %</b> &mdash; target &gt; 99.5% for reliable teleoperation</div>
+                    <div><span style="color:#ffaa00">&bull;</span> <b style="color:#888">MTBF</b> &mdash; mean time between failures; longer is better</div>
+                    <div><span style="color:#ff4444">&bull;</span> <b style="color:#888">MTTR</b> &mdash; mean time to recovery; faster reconnects = safer</div>
+                    <div><span style="color:#00aaff">&bull;</span> <b style="color:#888">Seq gaps</b> &mdash; frames the Pi sent but never arrived</div>
+                    <div><span style="color:#ff6600">&bull;</span> <b style="color:#888">Latency spikes</b> &mdash; precursor to drops; watch the trend</div>
+                    <div><span style="color:#aa55ff">&bull;</span> <b style="color:#888">P95/P99 latency</b> &mdash; tail latency matters more than average</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signal timeline -->
+        <div class="panel grid-full">
+            <div class="panel-title">Signal Timeline (live)</div>
+            <canvas class="timeline-canvas" id="timelineCanvas"></canvas>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #333; margin-top: 4px;">
+                <span>oldest</span>
+                <span>
+                    <span style="color:#00ff88">&#9632;</span> connected
+                    <span style="margin-left: 8px; color:#ff4444">&#9632;</span> disconnected
+                    <span style="margin-left: 8px; color:#ffaa00">&#9632;</span> seq gap
+                    <span style="margin-left: 8px; color:#ff6600">&#9632;</span> latency spike
+                </span>
+                <span>now</span>
+            </div>
+        </div>
+
+        <!-- Latency over time chart -->
+        <div class="panel grid-full">
+            <div class="panel-title">Latency Over Time (last 300 frames)</div>
+            <canvas class="chart-canvas" id="latencyCanvas"></canvas>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #333; margin-top: 4px;">
+                <span>300 frames ago</span>
+                <span>
+                    <span style="color:#00aaff">&mdash;</span> capture
+                    <span style="margin-left: 8px; color:#ffaa00">&mdash;</span> encode
+                    <span style="margin-left: 8px; color:#ff5555">&mdash;</span> network
+                    <span style="margin-left: 8px; color:#888">- -</span> 200ms threshold
+                </span>
+                <span>now</span>
+            </div>
+        </div>
+
+        <!-- Camera events -->
+        <div class="panel grid-full">
+            <div class="panel-title">Camera Events</div>
+            <div class="event-log" id="eventLog">
+                <div class="no-data"><div class="no-data-icon">&loz;</div>No events yet</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let events = [];
+        let latencyHistory = [];
+        let piConnected = false;
+        let hasData = false;
+        let sessionStart = Date.now() / 1000;
+
+        let totalFrames = 0;
+        let droppedFrames = 0;
+        let dropCount = 0;
+        let gapCount = 0;
+        let spikeCount = 0;
+        let connectTimes = [];
+        let disconnectTimes = [];
+
+        fetch('/api/signal-events')
+            .then(r => r.json())
+            .then(data => {
+                sessionStart = data.session_start;
+                piConnected = data.pi_connected || false;
+                data.events.forEach(processEvent);
+                data.metrics_snapshot.forEach(m => {
+                    latencyHistory.push({
+                        capture_ms: m.capture_ms,
+                        encode_ms: m.encode_ms,
+                        network_ms: m.network_ms,
+                        total_ms: m.total_ms,
+                        seq: m.seq,
+                    });
+                    totalFrames++;
+                });
+                renderAll();
+            })
+            .catch(() => {});
+
+        function connect() {
+            var wsUrl = 'ws://' + location.hostname + ':9091';
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                ws.send(JSON.stringify({ role: 'browser' }));
+                document.getElementById('liveDot').classList.add('on');
+                document.getElementById('liveText').textContent = 'LIVE';
+            };
+
+            ws.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                if (data.type === 'signal_event') {
+                    processEvent(data);
+                    renderAll();
+                } else if (data.type === 'frame') {
+                    totalFrames++;
+                    latencyHistory.push({
+                        capture_ms: data.capture_ms,
+                        encode_ms: data.encode_ms,
+                        network_ms: data.network_ms,
+                        total_ms: data.total_ms,
+                        seq: data.seq,
+                    });
+                    if (latencyHistory.length > 300) latencyHistory.shift();
+                    renderAll();
+                }
+            };
+
+            ws.onclose = function() {
+                document.getElementById('liveDot').classList.remove('on');
+                document.getElementById('liveText').textContent = 'DISCONNECTED';
+                setTimeout(connect, 2000);
+            };
+            ws.onerror = function() { ws.close(); };
+        }
+
+        function processEvent(evt) {
+            if (evt.signal && evt.signal !== 'camera') return;
+            events.push(evt);
+            switch (evt.event) {
+                case 'pi_connected':
+                    piConnected = true; hasData = true;
+                    connectTimes.push(evt.ts); break;
+                case 'pi_disconnected':
+                    piConnected = false;
+                    disconnectTimes.push(evt.ts);
+                    dropCount++; break;
+                case 'seq_gap':
+                    gapCount++;
+                    droppedFrames += (evt.gap || 0); break;
+                case 'latency_spike':
+                    spikeCount++; break;
+            }
+        }
+
+        function renderAll() {
+            renderKPIs();
+            renderDistribution();
+            renderTimeline();
+            renderLatencyChart();
+            renderEventLog();
+        }
+
+        function renderKPIs() {
+            var now = Date.now() / 1000;
+            var sessionSec = now - sessionStart;
+            var scoreEl = document.getElementById('healthScore');
+            var labelEl = document.getElementById('healthLabel');
+
+            if (!hasData) {
+                scoreEl.innerHTML = '&mdash;';
+                scoreEl.className = 'health-score health-none';
+                labelEl.textContent = 'WAITING FOR DATA';
+                document.getElementById('kpiSession').textContent = fmtDuration(sessionSec);
+                return;
+            }
+
+            var uptime = 0;
+            for (var i = 0; i < connectTimes.length; i++) {
+                var start = connectTimes[i];
+                var end = (i < disconnectTimes.length) ? disconnectTimes[i] : now;
+                uptime += (end - start);
+            }
+            var pct = sessionSec > 0 ? Math.min(100, (uptime / sessionSec) * 100) : 0;
+
+            scoreEl.textContent = pct.toFixed(1);
+            scoreEl.className = 'health-score ' +
+                (pct >= 99 ? 'health-good' : pct >= 95 ? 'health-warn' : 'health-bad');
+            labelEl.textContent = '% UPTIME';
+
+            document.getElementById('kpiDrops').textContent = dropCount;
+            document.getElementById('kpiGaps').textContent = gapCount;
+            document.getElementById('kpiFrames').textContent = totalFrames;
+            document.getElementById('kpiDropped').textContent = droppedFrames;
+            document.getElementById('kpiSpikes').textContent = spikeCount;
+
+            if (dropCount > 0) {
+                document.getElementById('kpiMTBF').textContent = fmtDuration(uptime / dropCount);
+            }
+
+            if (disconnectTimes.length > 0 && connectTimes.length > 1) {
+                var totalRecovery = 0, recoveries = 0;
+                for (var j = 0; j < disconnectTimes.length; j++) {
+                    if (j + 1 < connectTimes.length) {
+                        totalRecovery += (connectTimes[j + 1] - disconnectTimes[j]);
+                        recoveries++;
+                    }
+                }
+                if (recoveries > 0) {
+                    document.getElementById('kpiMTTR').textContent = fmtDuration(totalRecovery / recoveries);
+                }
+            }
+
+            document.getElementById('kpiSession').textContent = fmtDuration(sessionSec);
+        }
+
+        function fmtDuration(sec) {
+            if (sec < 60) return sec.toFixed(1) + 's';
+            if (sec < 3600) return (sec / 60).toFixed(1) + 'm';
+            return (sec / 3600).toFixed(1) + 'h';
+        }
+
+        function renderDistribution() {
+            var container = document.getElementById('distChart');
+            if (latencyHistory.length === 0) {
+                container.innerHTML = '<div class="no-data"><div class="no-data-icon">&loz;</div>No frames received yet</div>';
+                return;
+            }
+
+            var buckets = [
+                { label: '< 50ms',        max: 50,       count: 0, color: '#00ff88' },
+                { label: '50\u2013100ms',  max: 100,      count: 0, color: '#00ffaa' },
+                { label: '100\u2013150ms', max: 150,      count: 0, color: '#88cc44' },
+                { label: '150\u2013200ms', max: 200,      count: 0, color: '#ffaa00' },
+                { label: '200\u2013300ms', max: 300,      count: 0, color: '#ff6600' },
+                { label: '> 300ms',        max: Infinity,  count: 0, color: '#ff4444' },
+            ];
+
+            latencyHistory.forEach(function(m) {
+                for (var i = 0; i < buckets.length; i++) {
+                    if (m.total_ms < buckets[i].max || buckets[i].max === Infinity) {
+                        buckets[i].count++; break;
+                    }
+                }
+            });
+
+            var maxCount = 1;
+            buckets.forEach(function(b) { if (b.count > maxCount) maxCount = b.count; });
+            container.innerHTML = '';
+
+            buckets.forEach(function(b) {
+                var pct = (b.count / maxCount) * 100;
+                container.innerHTML +=
+                    '<div class="dist-bar-row">' +
+                    '<span class="dist-label">' + b.label + '</span>' +
+                    '<div class="dist-bar-bg"><div class="dist-bar-fill" style="width:' + pct + '%;background:' + b.color + '"></div></div>' +
+                    '<span class="dist-count">' + b.count + '</span></div>';
+            });
+
+            var sorted = latencyHistory.map(function(m) { return m.total_ms; }).sort(function(a, b) { return a - b; });
+            var p = function(pct) { return sorted[Math.floor(sorted.length * pct / 100)] || 0; };
+            container.innerHTML +=
+                '<div style="margin-top:12px;font-size:11px;color:#555;display:flex;gap:20px;">' +
+                '<span>P50: <b style="color:#00ffaa">' + p(50).toFixed(0) + 'ms</b></span>' +
+                '<span>P95: <b style="color:#ffaa00">' + p(95).toFixed(0) + 'ms</b></span>' +
+                '<span>P99: <b style="color:#ff4444">' + p(99).toFixed(0) + 'ms</b></span>' +
+                '<span>Max: <b style="color:#ff4444">' + p(100).toFixed(0) + 'ms</b></span></div>';
+        }
+
+        function renderTimeline() {
+            var canvas = document.getElementById('timelineCanvas');
+            var rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width - 32;
+            canvas.height = 60;
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!hasData) {
+                ctx.fillStyle = '#222';
+                ctx.font = '11px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('No signal data yet', canvas.width / 2, 35);
+                return;
+            }
+
+            var now = Date.now() / 1000;
+            var timespan = now - sessionStart;
+            if (timespan <= 0) return;
+            var w = canvas.width, h = canvas.height;
+
+            for (var i = 0; i < connectTimes.length; i++) {
+                var x1 = ((connectTimes[i] - sessionStart) / timespan) * w;
+                var end = (i < disconnectTimes.length) ? disconnectTimes[i] : now;
+                var x2 = ((end - sessionStart) / timespan) * w;
+                ctx.fillStyle = 'rgba(0, 255, 136, 0.15)';
+                ctx.fillRect(x1, 0, x2 - x1, h);
+            }
+
+            for (var j = 0; j < disconnectTimes.length; j++) {
+                var dx1 = ((disconnectTimes[j] - sessionStart) / timespan) * w;
+                var dend = (j + 1 < connectTimes.length) ? connectTimes[j + 1] : now;
+                var dx2 = ((dend - sessionStart) / timespan) * w;
+                ctx.fillStyle = 'rgba(255, 68, 68, 0.2)';
+                ctx.fillRect(dx1, 0, dx2 - dx1, h);
+            }
+
+            events.forEach(function(evt) {
+                var x = ((evt.ts - sessionStart) / timespan) * w;
+                if (evt.event === 'seq_gap') {
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.fillRect(x - 1, h * 0.3, 3, h * 0.4);
+                } else if (evt.event === 'latency_spike') {
+                    ctx.fillStyle = '#ff6600';
+                    ctx.fillRect(x - 1, h * 0.1, 2, h * 0.8);
+                } else if (evt.event === 'pi_disconnected') {
+                    ctx.fillStyle = '#ff4444';
+                    ctx.fillRect(x - 1, 0, 3, h);
+                } else if (evt.event === 'pi_connected') {
+                    ctx.fillStyle = '#00ff88';
+                    ctx.fillRect(x - 1, 0, 2, h);
+                }
+            });
+        }
+
+        function renderLatencyChart() {
+            var canvas = document.getElementById('latencyCanvas');
+            var rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width - 32;
+            canvas.height = 180;
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (latencyHistory.length < 2) {
+                ctx.fillStyle = '#222';
+                ctx.font = '11px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Waiting for frames...', canvas.width / 2, 95);
+                return;
+            }
+
+            var w = canvas.width, h = canvas.height;
+            var data = latencyHistory.slice(-300);
+            var maxMs = 250;
+            data.forEach(function(d) { if (d.total_ms > maxMs) maxMs = d.total_ms; });
+            maxMs *= 1.1;
+
+            var threshY = h - (200 / maxMs) * h;
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(0, threshY);
+            ctx.lineTo(w, threshY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#333';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText('200ms', w - 4, threshY - 4);
+
+            var lines = [
+                { key: 'network_ms', color: '#ff5555' },
+                { key: 'encode_ms',  color: '#ffaa00' },
+                { key: 'capture_ms', color: '#00aaff' },
+            ];
+
+            lines.forEach(function(line) {
+                ctx.strokeStyle = line.color;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                data.forEach(function(d, i) {
+                    var x = (i / (data.length - 1)) * w;
+                    var y = h - (d[line.key] / maxMs) * h;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+        }
+
+        function renderEventLog() {
+            var container = document.getElementById('eventLog');
+            if (events.length === 0) {
+                container.innerHTML = '<div class="no-data"><div class="no-data-icon">&loz;</div>No events yet</div>';
+                return;
+            }
+            container.innerHTML = '';
+            var recent = events.slice(-200).reverse();
+            recent.forEach(function(evt) {
+                var icon = '\u2022', text = '', cls = '';
+                switch (evt.event) {
+                    case 'pi_connected':
+                        icon = '\u25B2'; cls = 'evt-connect';
+                        text = 'Pi connected'; break;
+                    case 'pi_disconnected':
+                        icon = '\u25BC'; cls = 'evt-disconnect';
+                        text = 'Pi disconnected \u2014 signal lost'; break;
+                    case 'seq_gap':
+                        icon = '\u26A0'; cls = 'evt-gap';
+                        text = 'Sequence gap: ' + evt.gap + ' frame(s) lost (seq ' + evt.from_seq + '\u2192' + evt.to_seq + ')'; break;
+                    case 'latency_spike':
+                        icon = '\u26A1'; cls = 'evt-spike';
+                        text = 'Latency spike: ' + evt.total_ms + 'ms (network: ' + evt.network_ms + 'ms) at seq #' + evt.seq; break;
+                }
+                var time = new Date(evt.ts * 1000).toLocaleTimeString();
+                container.innerHTML +=
+                    '<div class="evt ' + cls + '">' +
+                    '<span class="evt-time">' + time + '</span>' +
+                    '<span class="evt-icon">' + icon + '</span>' +
+                    '<span class="evt-text">' + text + '</span></div>';
+            });
+        }
+
+        setInterval(renderAll, 1000);
+        connect();
+    </script>
+</body>
+</html>

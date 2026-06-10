@@ -27,6 +27,19 @@
             color: #00ffaa;
             letter-spacing: 1px;
         }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brain-tag {
+            font-size: 11px;
+            color: #aa55ff;
+            background: #1a0a2a;
+            padding: 2px 8px;
+            border-radius: 3px;
+            border: 1px solid #aa55ff33;
+        }
         .status {
             display: flex;
             align-items: center;
@@ -47,7 +60,7 @@
         .main {
             display: grid;
             grid-template-columns: 1fr 300px;
-            grid-template-rows: 1fr 150px;
+            grid-template-rows: 1fr auto 150px;
             height: calc(100vh - 37px);
             gap: 1px;
             background: #222;
@@ -84,6 +97,38 @@
             letter-spacing: 4px;
         }
 
+        /* Action overlay */
+        .action-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+        .action-badge {
+            font-size: 24px;
+            font-weight: 800;
+            padding: 8px 20px;
+            border-radius: 6px;
+            letter-spacing: 2px;
+        }
+        .action-FORWARD { background: #00aa5580; color: #00ffaa; border: 2px solid #00ffaa; }
+        .action-LEFT    { background: #00aaff80; color: #55ccff; border: 2px solid #55ccff; }
+        .action-RIGHT   { background: #ffaa0080; color: #ffcc55; border: 2px solid #ffcc55; }
+        .action-STOP    { background: #ff444480; color: #ff6666; border: 2px solid #ff6666; }
+        .reasoning-box {
+            max-width: 50%;
+            font-size: 11px;
+            color: #ccc;
+            background: #00000099;
+            padding: 6px 10px;
+            border-radius: 4px;
+            text-align: right;
+        }
+
         /* Metrics panel */
         .metrics { overflow-y: auto; }
         .metric-row {
@@ -113,7 +158,7 @@
             font-size: 10px;
             color: #000;
             font-weight: 700;
-            min-width: 24px;
+            min-width: 20px;
             transition: width 0.2s ease;
         }
         .bar-capture { background: #00aaff; }
@@ -129,12 +174,65 @@
             margin-bottom: 16px;
         }
         .legend span::before {
-            content: '■ ';
+            content: '\u25A0 ';
         }
         .legend .l-capture { color: #00aaff; }
         .legend .l-encode  { color: #ffaa00; }
         .legend .l-network { color: #ff5555; }
         .legend .l-brain   { color: #aa55ff; }
+
+        /* Command input */
+        .command-bar {
+            grid-column: 1 / -1;
+            background: #0a0a0a;
+            padding: 8px 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            border-top: 1px solid #222;
+        }
+        .command-bar label {
+            font-size: 10px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            white-space: nowrap;
+        }
+        .command-bar input {
+            flex: 1;
+            background: #151515;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            font-family: inherit;
+            font-size: 13px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            outline: none;
+        }
+        .command-bar input:focus {
+            border-color: #00ffaa;
+        }
+        .command-bar input::placeholder {
+            color: #333;
+        }
+        .command-bar button {
+            background: #00ffaa;
+            color: #000;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+        .command-bar button:hover { background: #00cc88; }
+        .command-active {
+            font-size: 11px;
+            color: #00ffaa;
+            white-space: nowrap;
+        }
 
         /* Event log */
         .log {
@@ -148,24 +246,31 @@
         }
         .log-time { color: #333; }
         .log-data { color: #666; }
+        .log-action { color: #00ffaa; }
         .log-highlight { color: #ffaa00; }
     </style>
 </head>
 <body>
     <header>
         <h1>CLOUD ROVER &mdash; DEV HUD</h1>
-        <div class="status">
-            <a href="/signal-health.html" style="color:#555;text-decoration:none;font-size:11px;margin-right:8px;" onmouseover="this.style.color='#00ffaa'" onmouseout="this.style.color='#555'">SIGNAL HEALTH →</a>
-            <span id="statusText">DISCONNECTED</span>
-            <div class="status-dot" id="statusDot"></div>
+        <div class="header-right">
+            <span class="brain-tag" id="brainTag">NO BRAIN</span>
+            <div class="status">
+                <span id="statusText">DISCONNECTED</span>
+                <div class="status-dot" id="statusDot"></div>
+            </div>
         </div>
     </header>
 
     <div class="main">
-        <!-- Live feed -->
+        <!-- Live feed with overlay -->
         <div class="panel feed">
             <canvas id="feedCanvas" width="640" height="480"></canvas>
             <div class="no-signal" id="noSignal">NO SIGNAL</div>
+            <div class="action-overlay">
+                <div class="action-badge action-STOP" id="actionBadge">--</div>
+                <div class="reasoning-box" id="reasoningBox"></div>
+            </div>
         </div>
 
         <!-- Metrics sidebar -->
@@ -175,6 +280,7 @@
                 <div class="bar-capture" id="barCapture">--</div>
                 <div class="bar-encode" id="barEncode">--</div>
                 <div class="bar-network" id="barNetwork">--</div>
+                <div class="bar-brain" id="barBrain">--</div>
             </div>
             <div class="legend">
                 <span class="l-capture">capture</span>
@@ -217,9 +323,24 @@
                 <span class="metric-value" id="mSize">-- KB</span>
             </div>
             <div class="metric-row">
-                <span class="metric-label">Frames received</span>
-                <span class="metric-value" id="mCount">0</span>
+                <span class="metric-label">Detections</span>
+                <span class="metric-value" id="mDetections">0</span>
             </div>
+            <div class="metric-row">
+                <span class="metric-label">Action</span>
+                <span class="metric-value" id="mAction">--</span>
+            </div>
+
+            <div class="panel-title" style="margin-top:12px">Detections</div>
+            <div id="detectionList" style="font-size:11px;color:#888;"></div>
+        </div>
+
+        <!-- Command bar -->
+        <div class="command-bar">
+            <label>Goal</label>
+            <input type="text" id="commandInput" placeholder="e.g. go to the red cup, avoid the chair" />
+            <button id="commandSend">SEND</button>
+            <span class="command-active" id="commandActive"></span>
         </div>
 
         <!-- Event log -->
@@ -236,121 +357,215 @@
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const logEl = document.getElementById('logEntries');
+        const brainTag = document.getElementById('brainTag');
+        const actionBadge = document.getElementById('actionBadge');
+        const reasoningBox = document.getElementById('reasoningBox');
+        const commandInput = document.getElementById('commandInput');
+        const commandSend = document.getElementById('commandSend');
+        const commandActive = document.getElementById('commandActive');
+        const detectionList = document.getElementById('detectionList');
 
         let frameCount = 0;
         let fpsTimestamps = [];
         let lastFrameTime = 0;
         let ws;
+        let pendingFrame = null;
+
+        // Bbox colors by label hash
+        function labelColor(label) {
+            let h = 0;
+            for (let i = 0; i < label.length; i++) h = label.charCodeAt(i) + ((h << 5) - h);
+            h = ((h % 360) + 360) % 360;
+            return 'hsl(' + h + ', 80%, 60%)';
+        }
 
         // No-signal timeout
-        setInterval(() => {
+        setInterval(function() {
             if (Date.now() - lastFrameTime > 3000 && lastFrameTime > 0) {
                 noSignal.textContent = 'SIGNAL LOST';
                 noSignal.style.display = 'block';
             }
         }, 1000);
 
+        // Send command
+        function sendCommand() {
+            var text = commandInput.value.trim();
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'command', text: text }));
+                commandActive.textContent = text ? 'Active: ' + text : '';
+                addLog('Command sent: "' + text + '"', false, true);
+            }
+        }
+        commandSend.addEventListener('click', sendCommand);
+        commandInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') sendCommand();
+        });
+
         function connect() {
-            const wsUrl = 'ws://' + location.hostname + ':9091';
+            var wsUrl = 'ws://' + location.hostname + ':9091';
             ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => {
+            ws.onopen = function() {
                 ws.send(JSON.stringify({ role: 'browser' }));
                 statusDot.classList.add('live');
                 statusText.textContent = 'CONNECTED';
-                addLog('Connected to dashboard server');
+                addLog('Connected to brain server');
             };
 
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
+            ws.onmessage = function(event) {
+                var data = JSON.parse(event.data);
                 if (data.type === 'frame') {
+                    pendingFrame = data;
                     renderFrame(data);
                     updateMetrics(data);
-                    // Log periodically or on latency spikes
-                    if (data.seq % 50 === 0 || data.total_ms > 200) {
-                        addLog(
-                            'Frame #' + data.seq +
-                            ' \u2014 ' + data.total_ms + 'ms' +
-                            ' (cap:' + data.capture_ms +
-                            ' enc:' + data.encode_ms +
-                            ' net:' + data.network_ms + ')',
-                            data.total_ms > 200
-                        );
-                    }
+                    updateBrain(data);
                 }
             };
 
-            ws.onclose = () => {
+            ws.onclose = function() {
                 statusDot.classList.remove('live');
                 statusText.textContent = 'DISCONNECTED';
-                addLog('Disconnected \u2014 reconnecting...');
+                addLog('Disconnected, reconnecting...');
                 setTimeout(connect, 2000);
             };
 
-            ws.onerror = () => ws.close();
+            ws.onerror = function() { ws.close(); };
         }
 
         function renderFrame(data) {
-            const img = new Image();
-            img.onload = () => {
+            var img = new Image();
+            img.onload = function() {
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
                 noSignal.style.display = 'none';
                 lastFrameTime = Date.now();
+
+                // Draw bounding boxes
+                if (data.brain && data.brain.detections) {
+                    drawDetections(data.brain.detections, img.width, img.height);
+                }
             };
             img.src = 'data:image/jpeg;base64,' + data.frame;
         }
 
+        function drawDetections(detections, w, h) {
+            for (var i = 0; i < detections.length; i++) {
+                var d = detections[i];
+                var color = labelColor(d.label);
+                var bx = d.x1, by = d.y1, bw = d.x2 - d.x1, bh = d.y2 - d.y1;
+
+                // Box
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(bx, by, bw, bh);
+
+                // Label background
+                var text = d.label + ' ' + (d.confidence * 100).toFixed(0) + '%';
+                ctx.font = 'bold 12px monospace';
+                var tw = ctx.measureText(text).width;
+                ctx.fillStyle = color;
+                ctx.fillRect(bx, by - 18, tw + 8, 18);
+
+                // Label text
+                ctx.fillStyle = '#000';
+                ctx.fillText(text, bx + 4, by - 5);
+            }
+        }
+
+        function updateBrain(data) {
+            if (!data.brain) return;
+
+            var b = data.brain;
+
+            // Brain tag
+            if (b.brain_name) {
+                brainTag.textContent = b.brain_name.toUpperCase();
+            }
+
+            // Action badge
+            actionBadge.textContent = b.action;
+            actionBadge.className = 'action-badge action-' + b.action;
+
+            // Reasoning
+            reasoningBox.textContent = b.reasoning || '';
+
+            // Detection list in sidebar
+            if (b.detections && b.detections.length > 0) {
+                var html = '';
+                for (var i = 0; i < b.detections.length; i++) {
+                    var d = b.detections[i];
+                    var c = labelColor(d.label);
+                    html += '<div style="color:' + c + ';padding:2px 0;">' +
+                        '\u25A0 ' + d.label + ' ' +
+                        (d.confidence * 100).toFixed(0) + '%</div>';
+                }
+                detectionList.innerHTML = html;
+            } else {
+                detectionList.innerHTML = '<div style="color:#333">No detections</div>';
+            }
+
+            // Log brain actions periodically
+            if (data.seq % 30 === 0) {
+                var dets = b.detections ? b.detections.length : 0;
+                addLog(
+                    'Frame #' + data.seq + ' | ' +
+                    b.action + ' | ' + dets + ' detections | ' +
+                    b.inference_ms + 'ms brain',
+                    false, true
+                );
+            }
+        }
+
         function updateMetrics(data) {
             frameCount++;
-
-            // Rolling FPS (2-second window)
-            const now = performance.now();
+            var now = performance.now();
             fpsTimestamps.push(now);
-            fpsTimestamps = fpsTimestamps.filter(t => now - t < 2000);
-            const fps = fpsTimestamps.length / 2;
+            fpsTimestamps = fpsTimestamps.filter(function(t) { return now - t < 2000; });
+            var fps = fpsTimestamps.length / 2;
+
+            var brainMs = data.brain ? data.brain.inference_ms : 0;
 
             setText('mFps', fps.toFixed(1), fps < 5 ? 'warn' : '');
             setText('mFrame', '#' + data.seq);
-            setText('mTotal', data.total_ms + ' ms', data.total_ms > 200 ? 'bad' : data.total_ms > 150 ? 'warn' : '');
+            setText('mTotal', data.total_ms + ' ms', data.total_ms > 300 ? 'bad' : data.total_ms > 150 ? 'warn' : '');
             setText('mCapture', data.capture_ms + ' ms');
             setText('mEncode', data.encode_ms + ' ms');
             setText('mNetwork', data.network_ms + ' ms', data.network_ms > 50 ? 'warn' : '');
-            setText('mBrain', '-- ms');
+            setText('mBrain', brainMs.toFixed(1) + ' ms', brainMs > 100 ? 'warn' : '');
             setText('mSize', data.jpeg_kb + ' KB');
-            setText('mCount', frameCount);
+            setText('mDetections', data.brain ? (data.brain.detections ? data.brain.detections.length : 0) : 0);
+            setText('mAction', data.brain ? data.brain.action : '--');
 
-            // Latency bar widths
-            const total = data.capture_ms + data.encode_ms + data.network_ms;
+            // Latency bar (now includes brain)
+            var total = data.capture_ms + data.encode_ms + data.network_ms + brainMs;
             if (total > 0) {
                 setBar('barCapture', data.capture_ms, total);
                 setBar('barEncode', data.encode_ms, total);
                 setBar('barNetwork', data.network_ms, total);
+                setBar('barBrain', brainMs, total);
             }
         }
 
         function setText(id, value, cls) {
-            const el = document.getElementById(id);
+            var el = document.getElementById(id);
             el.textContent = value;
             el.className = 'metric-value' + (cls ? ' ' + cls : '');
         }
 
         function setBar(id, ms, total) {
-            const el = document.getElementById(id);
-            el.style.width = Math.max(15, ms / total * 100) + '%';
+            var el = document.getElementById(id);
+            el.style.width = Math.max(10, ms / total * 100) + '%';
             el.textContent = Math.round(ms);
         }
 
-        function addLog(text, highlight) {
-            const entry = document.createElement('div');
+        function addLog(text, highlight, isAction) {
+            var entry = document.createElement('div');
             entry.className = 'log-entry';
-            const t = new Date().toLocaleTimeString();
-            const cls = highlight ? 'log-highlight' : 'log-data';
+            var t = new Date().toLocaleTimeString();
+            var cls = highlight ? 'log-highlight' : (isAction ? 'log-action' : 'log-data');
             entry.innerHTML = '<span class="log-time">[' + t + ']</span> <span class="' + cls + '">' + text + '</span>';
             logEl.prepend(entry);
-
-            // Cap at 200 entries
             while (logEl.children.length > 200) {
                 logEl.removeChild(logEl.lastChild);
             }
