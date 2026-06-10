@@ -4,180 +4,281 @@
   "editor": "wokwi",
   "parts": [
     {
-      "type": "wokwi-arduino-uno",
+      "type": "chip-rpi3b",
       "id": "pi",
       "left": 200,
-      "top": 120,
+      "top": 80,
+      "attrs": {}
+    },
+    {
+      "type": "chip-pca9685",
+      "id": "pwm",
+      "left": 500,
+      "top": 60,
       "attrs": {},
-      "_note": "Represents Raspberry Pi 3B GPIO. Pin mapping: 0=GPIO17, 1=GPIO27, 2=GPIO22, 3=GPIO23, 5=GPIO12(PWM0), 6=GPIO13(PWM1)"
+      "_note": "PCA9685 16-CH PWM driver. I2C address 0x40. Drives 4 DC motors via L298N. Using CH0-CH3 for direction (IN1-IN4) and CH4-CH5 for speed (ENA/ENB)."
     },
     {
       "type": "chip-l298n",
-      "id": "bridge",
-      "left": 500,
-      "top": 80,
+      "id": "bridge_ab",
+      "left": 740,
+      "top": 20,
       "attrs": { "Vs": "6" },
-      "_note": "L298N dual H-bridge motor driver. 6V motor supply from 4xAA battery pack. Drives both DC motors."
+      "_note": "L298N #1: drives front-left (Ch A) and front-right (Ch B) motors."
+    },
+    {
+      "type": "chip-l298n",
+      "id": "bridge_cd",
+      "left": 740,
+      "top": 240,
+      "attrs": { "Vs": "6" },
+      "_note": "L298N #2: drives rear-left (Ch A) and rear-right (Ch B) motors."
     },
     {
       "type": "chip-dc-motor",
-      "id": "motor_left",
-      "left": 700,
-      "top": 60,
+      "id": "motor_fl",
+      "left": 940,
+      "top": 20,
       "attrs": { "ratedV": "6" },
-      "_note": "Left drive motor. 6V brushed DC with encoder. TT gearmotor."
+      "_note": "Front-left TT gearmotor. 3-6V, ~200RPM, dual shaft for encoder."
     },
     {
       "type": "chip-dc-motor",
-      "id": "motor_right",
-      "left": 700,
-      "top": 180,
+      "id": "motor_fr",
+      "left": 940,
+      "top": 120,
       "attrs": { "ratedV": "6" },
-      "_note": "Right drive motor. 6V brushed DC with encoder. TT gearmotor."
+      "_note": "Front-right TT gearmotor."
+    },
+    {
+      "type": "chip-dc-motor",
+      "id": "motor_rl",
+      "left": 940,
+      "top": 240,
+      "attrs": { "ratedV": "6" },
+      "_note": "Rear-left TT gearmotor."
+    },
+    {
+      "type": "chip-dc-motor",
+      "id": "motor_rr",
+      "left": 940,
+      "top": 340,
+      "attrs": { "ratedV": "6" },
+      "_note": "Rear-right TT gearmotor."
+    },
+    {
+      "type": "chip-hcsr04",
+      "id": "sonar",
+      "left": 200,
+      "top": 380,
+      "attrs": {},
+      "_note": "HC-SR04 ultrasonic distance sensor. Front-mounted. 5V logic, ECHO needs voltage divider."
+    },
+    {
+      "type": "chip-adxl345",
+      "id": "imu",
+      "left": 40,
+      "top": 80,
+      "attrs": {},
+      "_note": "GY-291 ADXL345 3-axis accelerometer. I2C address 0x53. Center-mounted on chassis."
     },
     {
       "type": "chip-battery",
       "id": "motor_battery",
-      "left": 400,
-      "top": 320,
+      "left": 600,
+      "top": 440,
       "attrs": { "voltage": "6" },
-      "_note": "Motor power supply: 4xAA NiMH rechargeable (4 x 1.2V = 4.8V, or 4x alkaline = 6V). Separate from Pi power to avoid motor noise on logic rail."
+      "_note": "Motor power: 4×AA NiMH (4.8V) or alkaline (6V). Separate from logic supply."
     },
     {
       "type": "chip-battery",
       "id": "pi_battery",
       "left": 40,
-      "top": 320,
+      "top": 440,
       "attrs": { "voltage": "5" },
-      "_note": "Pi power supply: 5V 2.5A USB power bank. Must supply at least 2A for stable Pi 3B + camera operation. Connected via micro-USB, NOT through GPIO 5V pin in production."
-    },
-    {
-      "type": "wokwi-led",
-      "id": "led_status",
-      "left": 140,
-      "top": 20,
-      "attrs": { "color": "green" },
-      "_note": "Status LED: solid = ready, blinking = streaming, off = error. Connected to GPIO 18 (Pi pin 7)."
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r_led",
-      "left": 60,
-      "top": 20,
-      "attrs": { "resistance": "220" },
-      "_note": "Current limiting resistor for status LED. 220 ohm. (3.3V - 2V) / 220 = 5.9mA, safe for GPIO."
+      "_note": "Logic power: 5V 2.5A USB power bank → Pi micro-USB. Also powers PCA9685 VCC and sensors."
     },
     {
       "type": "wokwi-resistor",
       "id": "r_echo1",
-      "left": 60,
-      "top": 60,
+      "left": 340,
+      "top": 400,
       "attrs": { "resistance": "1000" },
-      "_note": "HC-SR04 ECHO voltage divider (upper). 1kΩ. Divides 5V ECHO signal down to 3.3V safe for Pi GPIO 25. Part of 1k/2k divider: 5V × 2k/(1k+2k) = 3.33V."
+      "_note": "HC-SR04 ECHO voltage divider upper leg. 1kΩ."
     },
     {
       "type": "wokwi-resistor",
       "id": "r_echo2",
-      "left": 60,
-      "top": 90,
+      "left": 340,
+      "top": 430,
       "attrs": { "resistance": "2000" },
-      "_note": "HC-SR04 ECHO voltage divider (lower). 2kΩ. Goes to GND. Combined with R1=1k gives 3.33V output from 5V ECHO, safe for Pi 3.3V GPIO."
+      "_note": "HC-SR04 ECHO voltage divider lower leg. 2kΩ to GND. Output: 5V × 2k/(1k+2k) = 3.33V."
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_status",
+      "left": 40,
+      "top": 20,
+      "attrs": { "color": "green" },
+      "_note": "Status LED on GPIO 18."
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_led",
+      "left": 100,
+      "top": 20,
+      "attrs": { "resistance": "220" },
+      "_note": "LED current limiter. (3.3V - 2V) / 220Ω = 5.9mA."
     }
   ],
   "connections": [
-    ["pi:0", "bridge:IN1", "orange", []],
-    ["pi:1", "bridge:IN2", "orange", []],
-    ["pi:2", "bridge:IN3", "yellow", []],
-    ["pi:3", "bridge:IN4", "yellow", []],
-    ["pi:5", "bridge:ENA", "purple", []],
-    ["pi:6", "bridge:ENB", "purple", []],
+    ["pi:GPIO2", "pwm:SDA", "blue", []],
+    ["pi:GPIO3", "pwm:SCL", "cyan", []],
 
-    ["bridge:OUT1", "motor_left:TERM1", "red", []],
-    ["bridge:OUT2", "motor_left:TERM2", "brown", []],
-    ["bridge:OUT3", "motor_right:TERM1", "red", []],
-    ["bridge:OUT4", "motor_right:TERM2", "brown", []],
+    ["pi:GPIO2", "imu:SDA", "blue", []],
+    ["pi:GPIO3", "imu:SCL", "cyan", []],
 
-    ["motor_battery:+", "bridge:12V", "red", []],
-    ["motor_battery:-", "bridge:GND", "black", []],
+    ["pwm:CH0", "bridge_ab:IN1", "orange", []],
+    ["pwm:CH1", "bridge_ab:IN2", "orange", []],
+    ["pwm:CH2", "bridge_ab:IN3", "yellow", []],
+    ["pwm:CH3", "bridge_ab:IN4", "yellow", []],
+    ["pwm:CH4", "bridge_ab:ENA", "purple", []],
+    ["pwm:CH5", "bridge_ab:ENB", "purple", []],
 
-    ["pi_battery:+", "pi:5V", "red", []],
+    ["pwm:CH6", "bridge_cd:IN1", "orange", []],
+    ["pwm:CH7", "bridge_cd:IN2", "orange", []],
+    ["pwm:CH8", "bridge_cd:IN3", "yellow", []],
+    ["pwm:CH9", "bridge_cd:IN4", "yellow", []],
+    ["pwm:CH10", "bridge_cd:ENA", "purple", []],
+    ["pwm:CH11", "bridge_cd:ENB", "purple", []],
+
+    ["bridge_ab:OUT1", "motor_fl:TERM1", "red", []],
+    ["bridge_ab:OUT2", "motor_fl:TERM2", "brown", []],
+    ["bridge_ab:OUT3", "motor_fr:TERM1", "red", []],
+    ["bridge_ab:OUT4", "motor_fr:TERM2", "brown", []],
+
+    ["bridge_cd:OUT1", "motor_rl:TERM1", "red", []],
+    ["bridge_cd:OUT2", "motor_rl:TERM2", "brown", []],
+    ["bridge_cd:OUT3", "motor_rr:TERM1", "red", []],
+    ["bridge_cd:OUT4", "motor_rr:TERM2", "brown", []],
+
+    ["motor_battery:+", "bridge_ab:12V", "red", []],
+    ["motor_battery:-", "bridge_ab:GND", "black", []],
+    ["motor_battery:+", "bridge_cd:12V", "red", []],
+    ["motor_battery:-", "bridge_cd:GND", "black", []],
+
+    ["pi_battery:+", "pi:5V.1", "red", []],
     ["pi_battery:-", "pi:GND.1", "black", []],
 
-    ["bridge:GND2", "pi:GND.2", "black", []],
+    ["pi:3.3V.1", "pwm:VCC", "orange", []],
+    ["pi:GND.2", "pwm:GND", "black", []],
+    ["motor_battery:+", "pwm:V+", "red", []],
 
-    ["pi:8", "r_led:1", "green", []],
+    ["pi:3.3V.2", "imu:VCC", "orange", []],
+    ["pi:GND.5", "imu:GND", "black", []],
+
+    ["pi:5V.2", "sonar:VCC", "red", []],
+    ["pi:GPIO24", "sonar:TRIG", "green", []],
+    ["sonar:ECHO", "r_echo1:1", "darkgreen", []],
+    ["r_echo1:2", "pi:GPIO25", "darkgreen", []],
+    ["r_echo1:2", "r_echo2:1", "darkgreen", []],
+    ["r_echo2:2", "pi:GND.4", "black", []],
+    ["sonar:GND", "pi:GND.3", "black", []],
+
+    ["bridge_ab:GND2", "pi:GND.6", "black", []],
+    ["bridge_cd:GND2", "bridge_ab:GND2", "black", []],
+
+    ["pi:GPIO18", "r_led:1", "green", []],
     ["r_led:2", "led_status:A", "green", []],
-    ["led_status:C", "pi:GND.3", "black", []]
+    ["led_status:C", "pi:GND.2", "black", []]
   ],
   "serialMonitor": { "display": "auto" },
 
   "_wiring_notes": {
-    "description": "Cloud Rover — Complete Wiring Diagram",
-    "board": "Raspberry Pi 3 Model B (represented as Arduino Uno in diagram tool)",
-    "gpio_pin_mapping": {
-      "Diagram Pin 0": "Pi GPIO 17 → L298N IN1 (Left Motor Direction A)",
-      "Diagram Pin 1": "Pi GPIO 27 → L298N IN2 (Left Motor Direction B)",
-      "Diagram Pin 2": "Pi GPIO 22 → L298N IN3 (Right Motor Direction A)",
-      "Diagram Pin 3": "Pi GPIO 23 → L298N IN4 (Right Motor Direction B)",
-      "Diagram Pin 5": "Pi GPIO 12 → L298N ENA (Left Motor PWM Speed)",
-      "Diagram Pin 6": "Pi GPIO 13 → L298N ENB (Right Motor PWM Speed)",
-      "Diagram Pin 8": "Pi GPIO 18 → Status LED (via 220Ω resistor)"
+    "description": "Cloud Rover — 4WD Wiring Diagram with PCA9685 PWM Driver",
+    "architecture": "Pi 3B → I2C → PCA9685 → 2× L298N → 4× DC motors. All motor control via I2C, freeing GPIO for sensors.",
+    "i2c_bus": {
+      "GPIO2 (SDA)": ["PCA9685 (0x40)", "ADXL345 (0x53)"],
+      "GPIO3 (SCL)": ["PCA9685 (0x40)", "ADXL345 (0x53)"],
+      "note": "Both devices share the I2C bus. Different addresses, no conflict."
     },
-    "sensors_not_in_diagram": {
-      "HC-SR04 Ultrasonic": {
-        "VCC": "Pi 5V rail",
-        "GND": "Pi GND",
-        "TRIG": "Pi GPIO 24 (output, 3.3V is enough to trigger)",
-        "ECHO": "Pi GPIO 25 via voltage divider (1kΩ + 2kΩ to GND). ECHO outputs 5V, Pi GPIO max is 3.3V. Divider: 5V × 2k/(1k+2k) = 3.33V.",
-        "mounting": "Front-facing, centered on chassis"
-      },
-      "MPU-6050 IMU": {
-        "VCC": "Pi 3.3V (MPU-6050 has onboard regulator, but 3.3V is cleaner)",
-        "GND": "Pi GND",
-        "SDA": "Pi GPIO 2 (I2C SDA, pin 3 on header)",
-        "SCL": "Pi GPIO 3 (I2C SCL, pin 5 on header)",
-        "INT": "Pi GPIO 4 (optional interrupt, not required initially)",
-        "I2C_address": "0x68 (default, AD0 low)",
-        "mounting": "Center of chassis, flat, aligned with direction of travel"
-      },
-      "ArduCam IMX708 Camera": {
-        "connection": "CSI ribbon cable to Pi camera port",
-        "power": "Powered by Pi via CSI connector",
-        "mounting": "Front-facing, slightly elevated, 15-20° downward tilt"
-      }
+    "pca9685_channel_mapping": {
+      "CH0":  "L298N #1 IN1 (front-left direction A)",
+      "CH1":  "L298N #1 IN2 (front-left direction B)",
+      "CH2":  "L298N #1 IN3 (front-right direction A)",
+      "CH3":  "L298N #1 IN4 (front-right direction B)",
+      "CH4":  "L298N #1 ENA (front-left speed PWM)",
+      "CH5":  "L298N #1 ENB (front-right speed PWM)",
+      "CH6":  "L298N #2 IN1 (rear-left direction A)",
+      "CH7":  "L298N #2 IN2 (rear-left direction B)",
+      "CH8":  "L298N #2 IN3 (rear-right direction A)",
+      "CH9":  "L298N #2 IN4 (rear-right direction B)",
+      "CH10": "L298N #2 ENA (rear-left speed PWM)",
+      "CH11": "L298N #2 ENB (rear-right speed PWM)",
+      "CH12-CH15": "Available for future servos (camera pan/tilt, gripper)"
+    },
+    "gpio_usage": {
+      "GPIO2 (SDA)": "I2C data — PCA9685 + ADXL345",
+      "GPIO3 (SCL)": "I2C clock — PCA9685 + ADXL345",
+      "GPIO18": "Status LED",
+      "GPIO24": "HC-SR04 TRIG (output)",
+      "GPIO25": "HC-SR04 ECHO (input, via voltage divider)",
+      "available": "GPIO4, GPIO7-GPIO17, GPIO22-23, GPIO27 — all free for future sensors/encoders"
     },
     "power_design": {
       "motor_supply": {
-        "source": "4× AA NiMH rechargeable batteries in series holder",
-        "voltage": "4.8V (NiMH) to 6V (alkaline)",
-        "capacity": "~2000mAh (NiMH)",
-        "connects_to": "L298N 12V input terminal",
-        "notes": "L298N drops ~2V, so motors see ~2.8-4V. Adequate for TT gearmotors. If more power needed, upgrade to 2S LiPo (7.4V)."
+        "source": "4× AA NiMH rechargeable (4.8V) or alkaline (6V)",
+        "connects_to": ["L298N #1 12V", "L298N #2 12V", "PCA9685 V+ (servo rail)"],
+        "notes": "L298N drops ~2V, motors see ~2.8-4V. Adequate for TT gearmotors. Both L298N share the same battery pack."
       },
       "logic_supply": {
-        "source": "5V USB power bank (phone charger battery)",
-        "voltage": "5V regulated",
-        "capacity": "5000-10000mAh recommended",
-        "connects_to": "Pi micro-USB port",
-        "notes": "MUST be separate from motor power. Motor noise will crash the Pi if shared. Power bank must supply 2.5A continuous."
+        "source": "5V 2.5A USB power bank → Pi micro-USB",
+        "powers": ["Raspberry Pi", "PCA9685 VCC (via Pi 3.3V)", "ADXL345 (via Pi 3.3V)", "HC-SR04 (via Pi 5V)"],
+        "notes": "MUST be separate from motor power to prevent noise-induced crashes."
       },
-      "common_ground": {
-        "critical": "L298N GND and Pi GND MUST be connected together. Without common ground, logic signals cannot reference the same voltage level and motors will not respond to commands."
-      }
+      "common_ground": "All GND pins connected: Pi, PCA9685, both L298N, HC-SR04, ADXL345. Critical for signal integrity."
     },
     "motor_control_logic": {
-      "FORWARD":  {"IN1": "HIGH", "IN2": "LOW", "IN3": "HIGH", "IN4": "LOW"},
-      "BACKWARD": {"IN1": "LOW", "IN2": "HIGH", "IN3": "LOW", "IN4": "HIGH"},
-      "LEFT":     {"IN1": "LOW", "IN2": "HIGH", "IN3": "HIGH", "IN4": "LOW"},
-      "RIGHT":    {"IN1": "HIGH", "IN2": "LOW", "IN3": "LOW", "IN4": "HIGH"},
-      "STOP":     {"IN1": "LOW", "IN2": "LOW", "IN3": "LOW", "IN4": "LOW"},
-      "speed": "ENA and ENB control speed via PWM (0-100% duty cycle). Start at 50% and tune."
+      "FORWARD":  {"IN1": "HIGH", "IN2": "LOW", "IN3": "HIGH", "IN4": "LOW", "note": "All 4 motors forward"},
+      "LEFT":     {"left_motors": "BACKWARD", "right_motors": "FORWARD", "note": "Skid steer left"},
+      "RIGHT":    {"left_motors": "FORWARD", "right_motors": "BACKWARD", "note": "Skid steer right"},
+      "STOP":     {"all": "LOW", "note": "All motors coast to stop"},
+      "speed": "ENA/ENB PWM 0-4095 (12-bit). Start at 50% (2048)."
+    },
+    "sensor_specs": {
+      "HC-SR04": {
+        "range": "2cm - 400cm",
+        "operating_voltage": "5V",
+        "echo_output": "5V TTL — MUST use voltage divider (1kΩ/2kΩ) for Pi 3.3V GPIO",
+        "trigger": "10µs pulse on TRIG pin",
+        "measurement": "distance_cm = echo_pulse_us / 58"
+      },
+      "ADXL345 (GY-291)": {
+        "range": "±2g / ±4g / ±8g / ±16g (selectable)",
+        "resolution": "13-bit, 3.9mg/LSB at ±2g",
+        "interface": "I2C (address 0x53) or SPI",
+        "operating_voltage": "2.0V - 3.6V (GY-291 has onboard regulator for 5V input, but 3.3V direct is cleaner)",
+        "data_rate": "up to 3200Hz",
+        "use_case": "Tilt detection, collision detection, dead reckoning assist"
+      },
+      "ArduCam IMX708": {
+        "connection": "CSI ribbon cable to Pi camera port",
+        "resolution": "12MP, 640x480 @ 16 FPS (video pipeline)",
+        "interface": "Built-in, no GPIO needed"
+      }
     },
     "safety": {
-      "voltage_divider": "REQUIRED on HC-SR04 ECHO pin. 5V into Pi GPIO will permanently damage the pin.",
-      "flyback_diodes": "L298N has built-in flyback diodes. No external diodes needed.",
-      "decoupling_caps": "Add 100nF ceramic capacitor across each motor terminal to suppress EMI noise. Solder directly to motor.",
-      "fuse": "Optional: 3A blade fuse on motor battery positive lead."
-    }
+      "voltage_divider": "REQUIRED on HC-SR04 ECHO. 5V into Pi GPIO = permanent damage.",
+      "separate_power": "Motor and logic power MUST be separate supplies with common ground.",
+      "decoupling_caps": "100nF ceramic across each motor terminal to suppress EMI.",
+      "pca9685_oe_pin": "OE pin left floating (internal pull-down, outputs enabled). Tie to GPIO for emergency motor kill if desired."
+    },
+    "advantages_of_pca9685": [
+      "Only 2 GPIO pins (I2C) control all 4 motors — frees GPIO for sensors",
+      "12-bit PWM resolution (4096 steps) vs Pi hardware PWM (limited to 2 channels)",
+      "Dedicated PWM clock — no CPU load for motor timing",
+      "16 channels — 12 used for motors, 4 spare for camera servos or gripper",
+      "Chainable — add a second PCA9685 (address 0x41) for 32 channels total"
+    ]
   }
 }

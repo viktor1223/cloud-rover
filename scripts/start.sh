@@ -71,33 +71,21 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # --- 1. Start Brain Server (Mac) ---
-echo "[1/3] Starting brain server (--brain $BRAIN)..."
+# brain_server.py serves BOTH the dashboard (:9090) and WebSocket (:9091).
+echo "[1/2] Starting brain server (--brain $BRAIN)..."
 conda run --no-capture-output python cloud/brain_server.py --brain "$BRAIN" &
 PIDS+=($!)
-sleep 2
+sleep 3
 
-# --- 2. Start Dashboard (Mac) ---
-# Only needed if dashboard.py is separate from brain_server.
-# Check if brain_server already serves the dashboard on :9090.
-# If brain_server handles both, skip this step.
-if lsof -i :9090 -sTCP:LISTEN -t >/dev/null 2>&1; then
-    echo "[2/3] Dashboard already served by brain server on :9090 — skipping."
-else
-    echo "[2/3] Starting dashboard..."
-    conda run --no-capture-output python cloud/dashboard.py &
-    PIDS+=($!)
-    sleep 1
-fi
-
-# --- 3. Start Pi edge_stream ---
+# --- 2. Start Pi edge_stream ---
 if [ "$SKIP_PI" = false ]; then
-    echo "[3/3] Starting edge_stream on Pi → ws://$MAC_IP:9091 ..."
+    echo "[2/2] Starting edge_stream on Pi → ws://$MAC_IP:9091 ..."
     # Deploy latest code first
     bash scripts/deploy.sh
     ssh pi "cd ~/cloud-rover && source .venv/bin/activate && python3 pi/edge_stream.py --dashboard ws://$MAC_IP:9091" &
     PIDS+=($!)
 else
-    echo "[3/3] Skipping Pi (--no-pi)."
+    echo "[2/2] Skipping Pi (--no-pi)."
 fi
 
 echo ""

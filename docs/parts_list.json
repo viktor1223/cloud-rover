@@ -1,38 +1,32 @@
 {
-  "project": "Cloud Rover",
+  "project": "Cloud Rover — 4WD with PCA9685",
   "parts": [
     {
       "category": "Chassis & Mechanical",
       "items": [
         {
-          "name": "2WD Smart Robot Car Chassis Kit",
-          "description": "Acrylic platform with 2× TT gearmotor mounts, caster wheel, mounting holes. Pre-drilled for common components.",
+          "name": "4WD Smart Robot Car Chassis Kit",
+          "description": "Acrylic or aluminum platform with 4× TT gearmotor mounts and mounting holes.",
           "quantity": 1,
-          "notes": "Get a kit that includes the motors and wheels. Search '2WD robot chassis kit Arduino' on Amazon. Most are compatible."
+          "notes": "Get a 4WD kit that includes the motors and wheels. Search '4WD robot chassis kit' on Amazon."
         },
         {
-          "name": "TT DC Gearmotor (6V, 200RPM)",
-          "description": "Yellow TT motor with gear reduction. 3-6V operating. Dual shaft preferred (one side for wheel, one for encoder disc).",
-          "quantity": 2,
-          "notes": "Usually included in chassis kit. If buying separate, get the dual-shaft version for encoder support."
+          "name": "TT DC Gearmotor (3-6V, ~200RPM)",
+          "description": "Yellow TT motor with gear reduction. Dual shaft preferred for encoder disc.",
+          "quantity": 4,
+          "notes": "Usually included in 4WD chassis kit."
         },
         {
           "name": "Rubber Wheels (65mm)",
           "description": "Press-fit wheels for TT motor D-shaft.",
-          "quantity": 2,
+          "quantity": 4,
           "notes": "Usually included in chassis kit."
         },
         {
-          "name": "Ball Caster Wheel",
-          "description": "Metal ball caster, rear support point. Creates 3-point contact.",
+          "name": "M3 Nylon Standoffs Kit",
+          "description": "For mounting Pi, PCA9685, and sensor boards above chassis.",
           "quantity": 1,
-          "notes": "Usually included in chassis kit."
-        },
-        {
-          "name": "Standoffs, screws, nuts (M3)",
-          "description": "M3 nylon or brass standoffs for mounting Pi and sensor boards above chassis.",
-          "quantity": 1,
-          "notes": "Pack of assorted M3 standoffs. Need ~20mm height for Pi mount."
+          "notes": "Assorted pack. Need ~20mm for Pi, ~10mm for PCA9685."
         }
       ]
     },
@@ -40,22 +34,38 @@
       "category": "Motor Control",
       "items": [
         {
-          "name": "L298N Dual H-Bridge Motor Driver",
-          "description": "Controls 2 DC motors independently. Direction + PWM speed. Built-in 5V regulator and flyback diodes.",
+          "name": "PCA9685 16-Channel 12-bit PWM Servo Driver (I2C)",
+          "description": "Controls all motors via I2C using only 2 GPIO pins. 12-bit PWM, 16 channels, chainable.",
           "quantity": 1,
-          "notes": "The red breakout board version. Has screw terminals for motors and power, header pins for logic."
+          "status": "ALREADY HAVE",
+          "specs": {
+            "interface": "I2C (address 0x40, configurable 0x40-0x7F)",
+            "channels": 16,
+            "resolution": "12-bit (4096 steps)",
+            "vcc": "3.3V or 5V logic",
+            "v_plus": "Separate servo/motor supply up to 6V",
+            "dimensions": "62.5mm × 25.4mm × 3mm"
+          },
+          "notes": "Channels 0-11 drive 2× L298N (4 motors). Channels 12-15 spare for camera servos or gripper."
+        },
+        {
+          "name": "L298N Dual H-Bridge Motor Driver",
+          "description": "Drives 2 DC motors per board. Direction + speed control. Built-in flyback diodes.",
+          "quantity": 2,
+          "status": "HAVE 1, NEED 1 MORE",
+          "specs": {
+            "motor_supply": "5-46V",
+            "logic_supply": "5V (from onboard regulator or external)",
+            "max_current": "2A per channel",
+            "voltage_drop": "~2V across H-bridge"
+          },
+          "notes": "L298N #1 drives front-left + front-right. L298N #2 drives rear-left + rear-right. Both controlled by PCA9685."
         },
         {
           "name": "Jumper Wires (Female-Female)",
-          "description": "For Pi GPIO header to L298N logic pins.",
-          "quantity": 10,
-          "notes": "Need 6 for motor control (ENA, IN1-4, ENB) + 2 for power/ground."
-        },
-        {
-          "name": "Jumper Wires (Male-Female)",
-          "description": "For sensor connections where one end needs breadboard or header.",
-          "quantity": 10,
-          "notes": "For HC-SR04, MPU-6050, LED connections."
+          "description": "Pi GPIO → PCA9685, PCA9685 → L298N, sensor connections.",
+          "quantity": 30,
+          "notes": "Get a pack of 40. You'll use ~25 for this build."
         }
       ]
     },
@@ -63,22 +73,22 @@
       "category": "Power",
       "items": [
         {
-          "name": "4× AA Battery Holder with Switch",
-          "description": "Holds 4 AA batteries in series (6V). Switch for motor kill. Bare wire leads.",
+          "name": "4× AA Battery Holder with Switch and JST Connector",
+          "description": "Series holder for 4 AA cells (4.8-6V). On/off switch for motor kill.",
           "quantity": 1,
-          "notes": "Use NiMH rechargeable AA batteries (4 × 1.2V = 4.8V) or alkaline (4 × 1.5V = 6V). Either works with L298N."
+          "notes": "Powers both L298N boards and PCA9685 V+ rail."
         },
         {
           "name": "AA NiMH Rechargeable Batteries (1.2V, 2000mAh)",
-          "description": "Rechargeable batteries for motor supply.",
+          "description": "Motor power supply cells.",
           "quantity": 4,
-          "notes": "Eneloop or Amazon Basics are reliable. Get a charger too if you don't have one."
+          "notes": "Eneloop or Amazon Basics. Get a charger if needed."
         },
         {
-          "name": "5V USB Power Bank (5000mAh+)",
-          "description": "Powers the Raspberry Pi via micro-USB. Must supply 2.5A continuous.",
+          "name": "5V USB Power Bank (5000mAh+, 2.5A output)",
+          "description": "Powers the Raspberry Pi via micro-USB.",
           "quantity": 1,
-          "notes": "Small, lightweight power bank. Must NOT have auto-shutoff (some banks turn off when current draw is low). Anker or similar quality brand."
+          "notes": "Must NOT auto-shutoff. Must supply 2.5A continuous. Small and lightweight."
         }
       ]
     },
@@ -87,21 +97,40 @@
       "items": [
         {
           "name": "HC-SR04 Ultrasonic Distance Sensor",
-          "description": "Measures distance 2cm-400cm via ultrasonic ping. 5V logic.",
+          "description": "Ultrasonic rangefinder. 2cm-400cm. 5V logic.",
           "quantity": 1,
-          "notes": "REQUIRES voltage divider on ECHO pin (5V→3.3V). See wiring diagram."
+          "status": "ALREADY HAVE",
+          "specs": {
+            "range": "2cm - 400cm",
+            "voltage": "5V",
+            "current": "15mA",
+            "echo_output": "5V TTL — REQUIRES voltage divider for Pi (3.3V max)",
+            "trigger": "10µs pulse",
+            "formula": "distance_cm = pulse_us / 58"
+          },
+          "notes": "Front-mounted. ECHO pin needs 1kΩ/2kΩ voltage divider to bring 5V down to 3.33V for Pi GPIO."
         },
         {
-          "name": "MPU-6050 IMU Module (GY-521)",
-          "description": "3-axis accelerometer + 3-axis gyroscope. I2C interface. 3.3V/5V compatible.",
+          "name": "GY-291 ADXL345 3-Axis Digital Accelerometer",
+          "description": "3-axis accelerometer, ±2g to ±16g selectable range, I2C/SPI interface.",
           "quantity": 1,
-          "notes": "The blue GY-521 breakout board. Provides orientation data for dead reckoning and tilt detection."
+          "status": "ALREADY HAVE",
+          "specs": {
+            "range": "±2g / ±4g / ±8g / ±16g (selectable)",
+            "resolution": "13-bit (3.9mg/LSB at ±2g)",
+            "interface": "I2C (0x53) or SPI",
+            "voltage": "2.0V - 3.6V (GY-291 breakout accepts 3.3V-5V)",
+            "current": "140µA at 100Hz ODR",
+            "data_rate": "up to 3200Hz"
+          },
+          "notes": "Center-mounted, flat on chassis. Provides tilt, collision detection, and basic orientation. Shares I2C bus with PCA9685 (different address)."
         },
         {
           "name": "ArduCam IMX708 Camera Module",
           "description": "12MP camera with autofocus. CSI interface.",
           "quantity": 1,
-          "notes": "ALREADY HAVE THIS. Connected via CSI ribbon cable."
+          "status": "ALREADY HAVE",
+          "notes": "Already connected and tested. Front-facing, 15-20° downward tilt."
         }
       ]
     },
@@ -109,72 +138,64 @@
       "category": "Electronics (Small Components)",
       "items": [
         {
-          "name": "1kΩ Resistor",
-          "description": "HC-SR04 ECHO voltage divider (upper resistor).",
+          "name": "1kΩ Resistor (1/4W)",
+          "description": "HC-SR04 ECHO voltage divider (upper leg).",
           "quantity": 2,
-          "notes": "1/4W through-hole. Part of voltage divider: 5V × 2k/(1k+2k) = 3.33V."
+          "notes": "Through-hole. Part of 1kΩ/2kΩ divider: 5V × 2k/(1k+2k) = 3.33V."
         },
         {
-          "name": "2kΩ Resistor",
-          "description": "HC-SR04 ECHO voltage divider (lower resistor, to GND).",
+          "name": "2kΩ Resistor (1/4W)",
+          "description": "HC-SR04 ECHO voltage divider (lower leg, to GND).",
           "quantity": 2,
-          "notes": "1/4W through-hole. If you can't find 2kΩ, use 2× 1kΩ in series."
+          "notes": "If unavailable, use 2× 1kΩ in series."
         },
         {
-          "name": "220Ω Resistor",
-          "description": "Current-limiting resistor for status LED.",
+          "name": "220Ω Resistor (1/4W)",
+          "description": "Status LED current limiter.",
           "quantity": 2,
-          "notes": "1/4W through-hole."
+          "notes": "(3.3V - 2V) / 220Ω = 5.9mA."
         },
         {
           "name": "Green LED (5mm)",
-          "description": "Status indicator. Visible from outside chassis.",
-          "quantity": 2,
-          "notes": "One for status, one spare."
+          "description": "Status indicator.",
+          "quantity": 2
         },
         {
           "name": "100nF Ceramic Capacitor",
           "description": "EMI suppression across motor terminals.",
-          "quantity": 4,
-          "notes": "Solder one directly across each motor's terminals to suppress electrical noise from brushes. 2 per motor (one across terminals, one from each terminal to motor case)."
+          "quantity": 8,
+          "notes": "Solder directly across each motor's terminals. 2 per motor."
         },
         {
           "name": "Mini Breadboard (170-point)",
-          "description": "For voltage divider and sensor connections. Mounts on chassis.",
+          "description": "For voltage divider and sensor wiring.",
           "quantity": 1,
-          "notes": "Self-adhesive back sticks to chassis. Routes sensor wiring neatly."
+          "notes": "Self-adhesive. Mounts on chassis."
         }
       ]
     },
     {
-      "category": "Already Have",
+      "category": "Already Have (Summary)",
       "items": [
-        {
-          "name": "Raspberry Pi 3 Model B",
-          "quantity": 1,
-          "notes": "Already set up with OS, camera, WiFi, SSH."
-        },
-        {
-          "name": "ArduCam IMX708 Camera",
-          "quantity": 1,
-          "notes": "Already connected and tested."
-        },
-        {
-          "name": "MicroSD Card (16GB+)",
-          "quantity": 1,
-          "notes": "Already flashed with Pi OS."
-        }
+        { "name": "Raspberry Pi 3 Model B", "quantity": 1 },
+        { "name": "ArduCam IMX708 Camera", "quantity": 1 },
+        { "name": "MicroSD Card (16GB+)", "quantity": 1 },
+        { "name": "PCA9685 16-CH PWM Driver", "quantity": 1 },
+        { "name": "L298N H-Bridge (need 2 total)", "quantity": 1 },
+        { "name": "HC-SR04 Ultrasonic Sensor", "quantity": 1 },
+        { "name": "GY-291 ADXL345 Accelerometer", "quantity": 1 }
       ]
     }
   ],
-  "estimated_cost": {
-    "chassis_kit_with_motors": "$15-25",
-    "l298n": "$5-8",
-    "battery_holder_and_batteries": "$15-20",
-    "usb_power_bank": "$10-15 (or use one you already have)",
-    "hc_sr04": "$3-5",
-    "mpu_6050": "$3-5",
-    "resistors_leds_caps_breadboard_jumpers": "$10-15",
-    "total_estimate": "$60-90 (excluding items you already have)"
-  }
+  "need_to_buy": [
+    "4WD chassis kit with 4× TT motors + wheels ($20-30)",
+    "1× L298N H-Bridge Motor Driver ($5-8)",
+    "4× AA battery holder with switch ($3-5)",
+    "4× AA NiMH rechargeable batteries ($10-15)",
+    "5V USB power bank ($10-15, or use existing)",
+    "Jumper wires 40-pack F-F ($5)",
+    "Resistors (1kΩ, 2kΩ, 220Ω), LEDs, caps, breadboard ($10-15)",
+    "M3 standoff kit ($5-8)"
+  ],
+  "estimated_total": "$55-85 (for parts not already owned)"
 }
