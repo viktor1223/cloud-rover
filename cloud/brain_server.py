@@ -35,7 +35,9 @@ except ImportError:
     raise SystemExit(1)
 
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+_root = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+if _root not in sys.path:
+    sys.path.insert(0, _root)
 from shared.protocol import Action, BrainResult
 
 HTTP_PORT = 9090

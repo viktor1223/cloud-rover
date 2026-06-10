@@ -13,10 +13,12 @@ Planning rules:
 import time
 import numpy as np
 
-from .base import Brain
-
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+_root = os.path.join(os.path.dirname(__file__), "..", "..")
+if _root not in sys.path:
+    sys.path.insert(0, _root)
+
+from cloud.brains.base import Brain
 from shared.protocol import Action, Detection, BrainResult
 
 
