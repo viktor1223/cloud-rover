@@ -37,6 +37,12 @@ WS_PORT = 9091
 browsers: set = set()
 metrics: deque = deque(maxlen=300)
 
+# Signal health tracking
+signal_events: deque = deque(maxlen=2000)
+last_pi_seq: int = -1
+session_start: float = time.time()
+pi_connected: bool = False
+
 
 def get_local_ip():
     """Get this machine's LAN IP address."""
@@ -50,15 +56,49 @@ def get_local_ip():
         return "127.0.0.1"
 
 
+def emit_signal_event(event_type, signal="camera", **kwargs):
+    """Record a signal event and relay it to browsers."""
+    evt = {"type": "signal_event", "event": event_type, "signal": signal,
+           "ts": time.time(), **kwargs}
+    signal_events.append(evt)
+    return evt
+
+
+async def broadcast_signal_event(evt):
+    """Best-effort broadcast of a signal event to browsers."""
+    msg = json.dumps(evt)
+    gone = set()
+    for b in browsers:
+        try:
+            await b.send(msg)
+        except Exception:
+            gone.add(b)
+    browsers.difference_update(gone)
+
+
 async def handle_pi(ws):
     """Receive frames from Pi, compute metrics, relay to browsers."""
-    global browsers
+    global browsers, last_pi_seq, pi_connected
+    pi_connected = True
     print("  ✓ Pi connected")
+    evt = emit_signal_event("pi_connected")
+    await broadcast_signal_event(evt)
     try:
         async for message in ws:
             data = json.loads(message)
             if data.get("type") != "frame":
                 continue
+
+            # Detect sequence gaps (dropped frames)
+            seq = data.get("seq", 0)
+            if last_pi_seq >= 0 and seq > last_pi_seq + 1:
+                gap = seq - last_pi_seq - 1
+                gap_evt = emit_signal_event(
+                    "seq_gap", gap=gap,
+                    from_seq=last_pi_seq, to_seq=seq,
+                )
+                await broadcast_signal_event(gap_evt)
+            last_pi_seq = seq
 
             # Compute network latency (approximate — depends on clock sync)
             now = time.time()
@@ -68,6 +108,14 @@ async def handle_pi(ws):
                 data["capture_ms"] + data["encode_ms"] + network_ms, 1
             )
             metrics.append(data)
+
+            # Detect latency spike
+            if data["total_ms"] > 300:
+                spike_evt = emit_signal_event(
+                    "latency_spike", total_ms=data["total_ms"],
+                    network_ms=data["network_ms"], seq=seq,
+                )
+                await broadcast_signal_event(spike_evt)
 
             # Relay to all connected browsers (best-effort)
             msg = json.dumps(data)
@@ -82,7 +130,10 @@ async def handle_pi(ws):
     except websockets.ConnectionClosed:
         pass
     finally:
+        pi_connected = False
         print("  ✗ Pi disconnected")
+        evt = emit_signal_event("pi_disconnected")
+        await broadcast_signal_event(evt)
 
 
 async def handle_browser(ws):
@@ -119,7 +170,7 @@ async def ws_handler(websocket, *args):
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
-    """Serve dashboard static files."""
+    """Serve dashboard static files and signal health API."""
 
     def __init__(self, *args, **kwargs):
         d = str(Path(__file__).parent / "static")
@@ -128,6 +179,19 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
             self.path = "/dashboard.html"
+        elif self.path == "/api/signal-events":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            payload = json.dumps({
+                "session_start": session_start,
+                "pi_connected": pi_connected,
+                "events": list(signal_events),
+                "metrics_snapshot": list(metrics)[-60:],
+            })
+            self.wfile.write(payload.encode())
+            return
         super().do_GET()
 
     def log_message(self, format, *args):

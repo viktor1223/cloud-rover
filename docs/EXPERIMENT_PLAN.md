@@ -6,6 +6,25 @@ ms.date: 2026-06-09
 ms.topic: concept
 ---
 
+## Motivation
+
+I come from the old school of self-driving cars, where perception meant training
+CNNs to run on-vehicle in real time, every model was hand-tuned for the hardware,
+and the entire pipeline lived on the car. That world was about squeezing every
+last FLOP out of an embedded GPU to detect lanes and obstacles at 30 FPS.
+
+The landscape has shifted. Foundation models now offer general-purpose vision,
+language understanding, and action prediction out of the box. Inference can
+happen in the cloud or on a beefy desktop rather than on the robot itself.
+As a robotics engineer, I want to understand what that shift means in practice:
+can these new approaches actually control a physical robot, and how do they
+compare to each other?
+
+This is a hobbyist project built on nights and weekends. The rover is a
+Raspberry Pi with a camera on wheels, the "cloud brain" is my desktop with a
+3070, and the evaluation environment is my (messy) home. The constraints are
+real, the budget is small, and the goal is to learn by building.
+
 ## Project Goal
 
 Compare two fundamentally different AI approaches for controlling a physical rover,

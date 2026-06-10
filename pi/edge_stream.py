@@ -21,7 +21,7 @@ from PIL import Image
 async def stream(dashboard_uri, width, height, quality):
     print("Initializing camera...")
     cam = Picamera2()
-    config = cam.create_still_configuration(
+    config = cam.create_video_configuration(
         main={"size": (width, height), "format": "RGB888"}
     )
     cam.configure(config)
