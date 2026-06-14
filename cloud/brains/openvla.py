@@ -59,7 +59,7 @@ class OpenVLABrain(Brain):
             )
 
         self.device = torch.device("cuda")
-        vram_gb = torch.cuda.get_device_properties(0).total_mem / 1e9
+        vram_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
         gpu_name = torch.cuda.get_device_name(0)
         print(f"  GPU: {gpu_name} ({vram_gb:.1f} GB)")
 

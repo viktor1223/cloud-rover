@@ -29,3 +29,4 @@ accelerate==1.2.1
 sentencepiece==0.2.0
 protobuf==5.29.3
 bitsandbytes==0.45.0        # 4-bit quantization — required for 8 GB VRAM
+timm>=1.0                   # vision backbone used by OpenVLA processor
