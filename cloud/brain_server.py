@@ -85,7 +85,7 @@ def decode_frame(b64_jpeg: str) -> np.ndarray:
 
 
 async def handle_pi(ws):
-    """Receive frames from Pi, run brain, relay results to browsers."""
+    """Receive frames from Pi, run brain, relay results to browsers, send action back."""
     global browsers
     print("  ✓ Pi connected")
     try:
@@ -104,6 +104,16 @@ async def handle_pi(ws):
             now = time.time()
             network_ms = max(0, (now - data["ts"]) * 1000)
 
+            # Send action back to Pi for motor execution
+            action_msg = json.dumps({
+                "type": "action",
+                "action": result.action.value,
+            })
+            try:
+                await ws.send(action_msg)
+            except Exception:
+                pass
+
             # Build message for dashboard
             out = {
                 "type": "frame",
@@ -121,6 +131,11 @@ async def handle_pi(ws):
                     + network_ms + result.inference_ms, 1
                 ),
             }
+
+            # Pass through sensor data if present
+            for key in ("accel", "distance_cm", "motors", "sensor_ms"):
+                if key in data:
+                    out[key] = data[key]
 
             # Relay to browsers (best-effort)
             msg = json.dumps(out)

@@ -44,8 +44,11 @@ better to new tasks and sensor configurations.
 | Component | Spec |
 |-----------|------|
 | Edge body | Raspberry Pi 3 Model B (1 GB RAM, aarch64) |
-| Camera | ArduCam IMX708 (12 MP, 640x480 @ ~8 FPS) |
-| Motors | TBD (discrete: forward, left, right, stop) |
+| Camera | ArduCam IMX708 (12 MP, 640x480 @ ~16 FPS via video pipeline) |
+| Motor driver | PCA9685 (16-ch PWM, I2C) → 2× L298N H-bridge → 4× TT DC motors |
+| Sensors | HC-SR04 ultrasonic (front), ADXL345 accelerometer (I2C) |
+| Motor power | 4× AA NiMH (4.8-6V) via battery holder with kill switch |
+| Pi power | 5V USB power bank (5000 mAh, 2.5A) |
 | Brain compute | Desktop with NVIDIA RTX 3070 (8 GB VRAM) |
 | Fallback compute | Azure cloud (GPU instances) |
 | Network | Local WiFi (Pi to Desktop, same LAN) |
@@ -56,21 +59,35 @@ better to new tasks and sensor configurations.
 
 | Sensor | Shape | Rate | Notes |
 |--------|-------|------|-------|
-| Camera | (480, 640, 3) RGB | ~8 FPS | Primary input for all brains |
+| Camera | (480, 640, 3) RGB | ~16 FPS | Primary input for all brains (video pipeline, ADR-001b) |
 | Language command | string | On demand | Text instruction from Dev HUD (e.g., "go to the red cup") |
+| IMU (ADXL345) | {x, y, z} float g | ~16 FPS | Acceleration, tilt, collision detection. I2C at 0x53 |
+| Ultrasonic (HC-SR04) | float cm | ~16 FPS | Front distance (2-400 cm). GPIO trigger + echo |
+| Motor state | {left_duty, right_duty, left_dir, right_dir} | ~16 FPS | Actual commands sent to PCA9685 (post-safety override) |
 
-Future sensors (not in initial scope): IMU, ultrasonic, wheel encoders.
+All sensor data is sent from the Pi on every frame for logging and future
+training, even during heuristic operation (see ADR-004).
 
 ### Actions (outputs from the brain)
 
-Discrete action space with four options:
+**Discrete action space (heuristic brain):**
 
 | Action | Effect |
 |--------|--------|
-| `FORWARD` | Move forward ~10 cm |
-| `LEFT` | Rotate left ~15 degrees |
-| `RIGHT` | Rotate right ~15 degrees |
+| `FORWARD` | Move forward at 75% duty cycle |
+| `LEFT` | Rotate left at 50% duty cycle |
+| `RIGHT` | Rotate right at 50% duty cycle |
 | `STOP` | Halt all motors |
+
+**Continuous action space (VLA and world model brains):**
+
+| Field | Range | Effect |
+|-------|-------|--------|
+| `left_speed` | -1.0 to 1.0 | Left wheel pair speed (negative = reverse) |
+| `right_speed` | -1.0 to 1.0 | Right wheel pair speed (negative = reverse) |
+
+The Pi motor controller handles both modes. Continuous mode enables the
+differential drive needed for learned policies (see ADR-005).
 
 ## The Three Brains
 
@@ -318,8 +335,8 @@ class Brain:
 
 1. How do we define "goal reached" automatically? (Vision-based? ArUco marker at target? Manual button press?)
 2. Should DreamerV3 exploration be sim-first (train in a simulator, transfer to real) or real-only?
-3. What is the minimum viable motor setup for the first test? (Two DC motors with an H-bridge, or a pre-built chassis?)
-4. For OpenVLA, do we collect demonstrations via keyboard teleoperation or a joystick?
+3. For OpenVLA, do we collect demonstrations via keyboard teleoperation or a joystick?
+4. Can a digital twin (simulated PCA9685 + L298N + physics) validate the motor control code before hardware assembly?
 
 ## Timeline
 

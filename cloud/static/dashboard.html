@@ -436,6 +436,34 @@
                 <span class="metric-value" id="mAction">--</span>
             </div>
 
+            <div class="panel-title" style="margin-top:12px">Sensors</div>
+            <div class="metric-row">
+                <span class="metric-label">Distance</span>
+                <span class="metric-value" id="mDistance">-- cm</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Accel X</span>
+                <span class="metric-value" id="mAccelX">--</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Accel Y</span>
+                <span class="metric-value" id="mAccelY">--</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Accel Z</span>
+                <span class="metric-value" id="mAccelZ">--</span>
+            </div>
+
+            <div class="panel-title" style="margin-top:12px">Motors</div>
+            <div class="metric-row">
+                <span class="metric-label">Left</span>
+                <span class="metric-value" id="mMotorL">--</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Right</span>
+                <span class="metric-value" id="mMotorR">--</span>
+            </div>
+
             <div class="panel-title" style="margin-top:12px">Detections</div>
             <div id="detectionList" style="font-size:11px;color:#888;"></div>
         </div>
@@ -649,6 +677,23 @@
                 setBar('barEncode', data.encode_ms, total);
                 setBar('barNetwork', data.network_ms, total);
                 setBar('barBrain', brainMs, total);
+            }
+
+            // Sensor data
+            if (data.distance_cm != null) {
+                var dcm = data.distance_cm;
+                var dcls = dcm < 15 ? 'bad' : dcm < 40 ? 'warn' : '';
+                setText('mDistance', dcm.toFixed(1) + ' cm', dcls);
+            }
+            if (data.accel) {
+                setText('mAccelX', data.accel.x.toFixed(2) + ' m/s²');
+                setText('mAccelY', data.accel.y.toFixed(2) + ' m/s²');
+                setText('mAccelZ', data.accel.z.toFixed(2) + ' m/s²');
+            }
+            if (data.motors) {
+                var m = data.motors;
+                setText('mMotorL', m.left_dir + ' @ ' + (m.left_duty * 100).toFixed(0) + '%');
+                setText('mMotorR', m.right_dir + ' @ ' + (m.right_duty * 100).toFixed(0) + '%');
             }
         }
 

@@ -1,6 +1,28 @@
-picamera2
-gpiozero
-pigpio
-requests
-websockets
-Pillow
+# =============================================================================
+# Cloud Rover — Pi Edge Dependencies
+#
+# Environment:
+#   Board:   Raspberry Pi 3 Model B (aarch64, Debian 13 Trixie)
+#   Python:  3.11  (system default on Trixie)
+#   venv:    python3 -m venv .venv --system-site-packages
+#            (--system-site-packages needed for picamera2 + libcamera)
+#
+# Install:
+#   pip install -r pi/requirements.txt
+# =============================================================================
+
+# --- Camera & GPIO ---
+picamera2==0.3.34
+gpiozero==2.0.1
+pigpio==1.78
+
+# --- Networking ---
+websockets==14.1
+requests==2.32.3
+Pillow==11.1.0
+
+# --- I2C sensors & motor driver ---
+adafruit-circuitpython-pca9685==3.4.13
+adafruit-circuitpython-motor==3.5.3
+adafruit-circuitpython-adxl34x==1.12.16
+adafruit-blinka==8.46.1

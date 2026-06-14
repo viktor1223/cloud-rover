@@ -17,6 +17,27 @@ class Action(str, Enum):
     STOP = "STOP"
 
 
+# ---------------------------------------------------------------------------
+# Motor state — what the Pi is actually commanding the PCA9685
+# ---------------------------------------------------------------------------
+
+@dataclass
+class MotorState:
+    """Current motor output state (post safety override)."""
+    left_duty: float = 0.0     # 0.0–1.0
+    right_duty: float = 0.0    # 0.0–1.0
+    left_dir: str = "stop"     # "forward", "reverse", "stop"
+    right_dir: str = "stop"
+
+    def to_dict(self) -> dict:
+        return {
+            "left_duty": round(self.left_duty, 3),
+            "right_duty": round(self.right_duty, 3),
+            "left_dir": self.left_dir,
+            "right_dir": self.right_dir,
+        }
+
+
 @dataclass
 class Detection:
     """A single object detection with bounding box."""

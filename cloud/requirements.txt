@@ -1,4 +1,31 @@
-websockets
-ultralytics
-Pillow
-numpy
+# =============================================================================
+# Cloud Rover — Brain Server Dependencies
+#
+# Environment:
+#   Python:  3.11  (best compat with PyTorch 2.4 + transformers)
+#   venv:    python3.11 -m venv .venv
+#   CUDA:    12.4  (via PyTorch wheel — no system CUDA toolkit needed in WSL2)
+#
+# PyTorch is installed separately (not in this file) because it needs
+# the CUDA-specific index URL:
+#   pip install torch==2.4.1 torchvision==0.19.1 \
+#       --index-url https://download.pytorch.org/whl/cu124
+#
+# Install this file after PyTorch:
+#   pip install -r cloud/requirements.txt
+# =============================================================================
+
+# --- Core (all brains) ---
+websockets==14.1
+Pillow==11.1.0
+numpy==1.26.4
+
+# --- Heuristic brain (YOLO) ---
+ultralytics==8.3.40
+
+# --- OpenVLA brain (GPU only, RTX 3070 8 GB) ---
+transformers==4.46.3
+accelerate==1.2.1
+sentencepiece==0.2.0
+protobuf==5.29.3
+bitsandbytes==0.45.0        # 4-bit quantization — required for 8 GB VRAM
